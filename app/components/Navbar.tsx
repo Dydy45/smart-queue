@@ -1,12 +1,12 @@
 "use client"
 import { UserButton, useUser } from '@clerk/nextjs'
 import { AudioWaveform, Menu, X } from 'lucide-react'
-import React, { useState } from 'react'
+import React, { useEffect, useState } from 'react'
 import Link from 'next/link'
+import { checkAndAddUser } from '../actions'
 
 const Navbar = () => {
     const {user} = useUser()
-    // eslint-disable-next-line @typescript-eslint/no-unused-vars
     const email = user?.primaryEmailAddress?.emailAddress
     const [menuOpen, setMenuOpen] = useState(false)
 
@@ -23,6 +23,15 @@ const Navbar = () => {
             ))}
         </>
     )
+
+    useEffect(() => {
+        const init = async () => {
+            if (email && user.fullName) {
+                await checkAndAddUser(email, user.fullName)
+            }
+        }
+        init()
+    }, [email, user])
 
   return (
     <div className='border-b border-base-300 px-5 md:px-[10%] py-4 relative'>
