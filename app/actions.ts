@@ -40,3 +40,23 @@ export async function createService(email: string, serviceName: string, avgTime:
         console.error("Error in createService:", error)
     }
 }
+
+export async function getServiceByEmail(email: string) {
+    if (!email) return 
+    try {
+        const company = await prisma.company.findUnique({
+            where: { email: email }
+        })
+        if (!company) {
+            throw new Error("Company not found")
+        }
+
+        const services = await prisma.service.findMany({
+            where: { companyId: company.id },
+            include: { company: true }
+        })
+        return services
+    } catch (error) {
+        console.error("Error in getServiceByEmail:", error)
+    }
+}
