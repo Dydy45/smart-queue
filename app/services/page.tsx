@@ -1,9 +1,11 @@
 /* eslint-disable react-hooks/rules-of-hooks */
 "use client"
-import React, { useState } from 'react'
+import React, { useEffect, useState } from 'react'
 import Wrapper from '../components/Wrapper'
 import { useUser } from '@clerk/nextjs'
-import { createService } from '../actions'
+import { createService, getServiceByEmail } from '../actions'
+import { Service } from '../generated/prisma/browser'
+import { Clock2, Trash } from 'lucide-react'
 
 const page = () => {
 
@@ -12,6 +14,8 @@ const page = () => {
 
     const [serviceName, setServiceName] = useState("")
     const [avgTime, setAvgTime] = useState(0)
+    const [loading, setLoading] = useState<boolean>(false)
+    const [services, setServices] = useState<Service[]>([])
 
     const handleCreateService = async () => {
         if (email && serviceName && avgTime > 0) {
@@ -19,18 +23,38 @@ const page = () => {
             await createService(email, serviceName, avgTime)
             setAvgTime(0)
             setServiceName("")
+            fetchServices()
           } catch (error) {
             console.error("Error creating service:", error)
           }
         }
     }
 
+    const fetchServices = async () => {
+      setLoading(true)
+      try {
+        if (email) {
+          const serviceData = await getServiceByEmail(email)
+          if (serviceData) {
+            setServices(serviceData)
+          }
+          setLoading(false)
+        }
+      } catch (error) {
+        console.error("Error fetching services:", error)
+      }
+    }
+
+    useEffect(() => {
+      fetchServices()
+    }, [email])
+
 
   return (
     <Wrapper>
-      <div className='flex w-full'>
+      <div className='flex w-full flex-col md:flex-row md:items-start items-center md:justify-start justify-center gap-4'>
 
-        <div className='space-y-2 w-1/4'>
+        <div className='space-y-2 md:w-1/4 w-full'>
 
             <span className='label-text'>Nom Du Service</span>
             <div>
@@ -45,6 +69,47 @@ const page = () => {
             <button className='btn btn-primary btn-sm mt-4 w-full' onClick={handleCreateService}>Ajouter le service</button>
         </div>
 
+        <div className='mt-4 md:mt-0 md:ml-4 md:w-3/4 md:border-l border-base-200 md:pl-4 w-full'>
+          <h3 className='font-semibold'>Liste des services</h3>
+
+          {loading ? (
+            <div className='flex justify-center items-center w-full'>
+              <span className="loading loading-spinner loading-xs"></span>
+            </div>
+          ) : services.length === 0 ?  (
+            <div></div>
+          ) : (
+            <div>
+              <div className="overflow-x-auto">
+                <table className="table w-fit">
+                  <thead>
+                    <tr>
+                      <th>#</th>
+                      <th>Nom du Service</th>
+                      <th>Temps Moyen (min)</th>
+                      <th>Actions</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {services.map((service, index) => (
+                      <tr key={service.id}>
+                      <th>{index + 1}</th>
+                      <td>{service.name}</td>
+                      <td className='flex items-center'> <Clock2 className="w-4 h-4 inline mr-2" />{service.avgTime} min</td>
+                      <td>
+                        <button className='btn btn-xs btn-error'>
+                          <Trash className="w-4 h-4" />
+                        </button>
+                      </td>
+                    </tr>
+                    ))}
+                    
+                  </tbody>
+                </table>
+              </div>
+            </div>
+          )}
+        </div>
 
       </div>
     </Wrapper>
