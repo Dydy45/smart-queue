@@ -12,6 +12,7 @@ const Navbar = () => {
 
     const navLinks =[
         {href: '/', label: "Accueil"},
+        {href: '/services', label: "Services"},
     ]
 
     const renderLinks = (classNames: string) => (
