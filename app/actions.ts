@@ -17,3 +17,26 @@ export async function checkAndAddUser(email: string, name: string) {
         console.error("Error in checkAndAddUser:", error)
     }
 }
+
+export async function createService(email: string, serviceName: string, avgTime: number) {
+    if (!email || !serviceName || avgTime == null) return
+    try {
+        const existingCompany = await prisma.company.findUnique({
+            where: { email: email }
+        })
+        if (existingCompany) {
+            // eslint-disable-next-line @typescript-eslint/no-unused-vars
+            const newService = await prisma.service.create({
+                data: {
+                    name: serviceName,
+                    avgTime: avgTime,
+                    companyId: existingCompany.id
+                }
+            })
+        } else {
+            console.error("Company not found for email:", email)
+        }
+    } catch (error) {
+        console.error("Error in createService:", error)
+    }
+}
