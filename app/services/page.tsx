@@ -65,7 +65,7 @@ const page = () => {
 
   return (
     <Wrapper>
-      <div className='flex w-full flex-col md:flex-row md:items-start items-center md:justify-start justify-center gap-4'>
+      <div className='flex w-full  flex-col md:flex-row'>
 
         <div className='space-y-2 md:w-1/4 w-full'>
 
@@ -77,9 +77,15 @@ const page = () => {
             <span className='label-text'>Temps Moyen (en minutes)</span>
             <label className='input input-bordered flex items-center input-sm gap-2'>
                 Temps Moyen
-                <input type="number" name="" placeholder='Temps moyen' className='input-sm w-full' value={avgTime || ''} onChange={(e) => setAvgTime(Number(e.target.value))} />
+                <input
+                  type="number"
+                  className="grow"
+                  placeholder="20min"
+                  value={avgTime}
+                  onChange={(e) => setAvgTime(Number(e.target.value))}
+                />
             </label>
-            <button className='btn btn-primary btn-sm mt-4 w-full' onClick={handleCreateService}>Ajouter le service</button>
+            <button className='btn btn-primary btn-sm mt-4' onClick={handleCreateService}>Ajouter le service</button>
         </div>
 
         <div className='mt-4 md:mt-0 md:ml-4 md:w-3/4 md:border-l border-base-200 md:pl-4 w-full'>

@@ -55,7 +55,7 @@ const Navbar = () => {
             <UserButton />
         </div>
       </div>
-      <div className={`absolute top-0 w-full bg-base-100 h-screen flex flex-col p-4 transition-all duration-300 sm:hidden z-index-50 ${menuOpen ? 'left-0' : '-left-full'}`}>
+      <div className={`absolute top-0 w-full bg-base-100 h-screen flex flex-col p-4 transition-all duration-300 sm:hidden z-index-100 ${menuOpen ? 'left-0' : '-left-full'}`}>
         <div className='flex justify-between'>
             <UserButton />
             <button className='btn w-fit btn-sm sm:hidden' onClick={() => setMenuOpen(!menuOpen)}>
