@@ -76,3 +76,23 @@ export async function deleteServiceById(serviceId: string) {
         console.error(error)
     }
 }
+
+export async function getCompanyPageName(email: string) {
+    try {
+        const company = await prisma.company.findUnique({
+            where: {
+                email: email
+            },
+            select: {
+                pageName: true
+            }
+        })
+
+        if (company) {
+            return company.pageName
+        }
+
+    } catch (error) {
+        console.error(error)
+    }
+}

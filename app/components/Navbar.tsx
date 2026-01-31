@@ -1,14 +1,16 @@
 "use client"
 import { UserButton, useUser } from '@clerk/nextjs'
-import { AudioWaveform, Menu, X } from 'lucide-react'
+import { AudioWaveform, GlobeLock, Menu, Settings, X } from 'lucide-react'
 import React, { useEffect, useState } from 'react'
 import Link from 'next/link'
-import { checkAndAddUser } from '../actions'
+import { checkAndAddUser, getCompanyPageName } from '../actions'
+import SettingsModal from './SettingsModal'
 
 const Navbar = () => {
     const {user} = useUser()
     const email = user?.primaryEmailAddress?.emailAddress
     const [menuOpen, setMenuOpen] = useState(false)
+    const [pageName, setPageName] = useState<string | null>(null)
 
     const navLinks =[
         {href: '/', label: "Accueil"},
@@ -16,12 +18,20 @@ const Navbar = () => {
     ]
 
     const renderLinks = (classNames: string) => (
+
         <>
+            <button className="btn btn-primary btn-circle " onClick={()=>(document.getElementById('my_modal_3') as HTMLDialogElement).showModal()}><Settings className='h-4 w-4 '/></button>
             {navLinks.map(({ href, label }) => (
                 <Link key={href} href={href} className={`${classNames} btn-sm`}>
                     {label}
                 </Link>
             ))}
+
+            {pageName && (
+                <Link href={`/page/${pageName}`} className={`${classNames} btn-sm`}>
+                    <GlobeLock className='w-4 h-4'/>
+                </Link>
+            )}
         </>
     )
 
@@ -29,6 +39,10 @@ const Navbar = () => {
         const init = async () => {
             if (email && user.fullName) {
                 await checkAndAddUser(email, user.fullName)
+                const pageName = await getCompanyPageName(email)
+                if (pageName) {
+                    setPageName(pageName)
+                }
             }
         }
         init()
@@ -64,6 +78,13 @@ const Navbar = () => {
         </div>
         {renderLinks("btn")}
       </div>
+
+      <SettingsModal 
+        email={email}
+        pageName={pageName}
+        onPageNameChange={setPageName}
+      />
+
     </div>
   )
 }
