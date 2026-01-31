@@ -61,18 +61,18 @@ export async function getServiceByEmail(email: string) {
     }
 }
 
-export async function deleteServiceById(serviceId: number) {
+export async function deleteServiceById(serviceId: string) {
     if (!serviceId) return
     try {
-        const service = await prisma.service.findUnique ({
+        // eslint-disable-next-line @typescript-eslint/no-unused-vars
+        const service = await prisma.service.findUnique({
             where: { id: serviceId }
         })
 
-        await prisma.service.delete ({
+        await prisma.service.delete({
             where: { id: serviceId }
         })
-
     } catch (error) {
-        console.error("Error in deleteServiceById:", error)
+        console.error(error)
     }
 }

@@ -54,7 +54,7 @@ const page = () => {
       const confirmation = window.confirm("Êtes-vous sûr de vouloir supprimer ce service ? tous les rendez-vous associés seront également supprimés.")
       if (confirmation) {
         try {
-          await deleteServiceById(Number(serviceId))
+          await deleteServiceById(serviceId)
           fetchServices()
         } catch (error) {
           console.error("Error deleting service:", error)
