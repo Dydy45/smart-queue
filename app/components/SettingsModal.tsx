@@ -1,4 +1,5 @@
-import React from 'react'
+import React, { useState } from 'react'
+import { setCompanyPageName } from '../actions';
 
 interface SettingsModalProps {
     email? : string | null;
@@ -6,8 +7,25 @@ interface SettingsModalProps {
     onPageNameChange : (newPageName: string) => void;
 }
 
-// eslint-disable-next-line @typescript-eslint/no-unused-vars
 const SettingsModal: React.FC<SettingsModalProps> = ({email, pageName, onPageNameChange}) => {
+    const [newPageName, setNewPageName] = useState ("")
+    const [loading, setLoading] = useState<boolean>(false)
+
+    const handleSave = async() => {
+        if(newPageName != "") {
+            setLoading(true)
+            try {
+                if(email) {
+                    await setCompanyPageName(email, newPageName)
+                    onPageNameChange(newPageName)
+                    setNewPageName("")
+                    setLoading(false)
+                }
+            } catch (error) {
+                console.error(error)
+            }
+        }
+    }
   return (
     <dialog id="my_modal_3" className="modal">
         <div className="modal-box">
@@ -18,7 +36,7 @@ const SettingsModal: React.FC<SettingsModalProps> = ({email, pageName, onPageNam
             <h3 className="font-bold text-lg">Paramètres</h3>
             <label className='form-control w-full'>
                 <div className='label'>
-                    <span className='label-text'>Le nom de votre page n&apos;est pas modifiable</span>
+                    <span className='label-text'>Le nom de votre page (Ce n&apos;est pas modifiable)</span>
                     {pageName? (
                         <div>
                             <div className='badge badge-primary'>{pageName}</div>
@@ -29,12 +47,16 @@ const SettingsModal: React.FC<SettingsModalProps> = ({email, pageName, onPageNam
                                 type="text" 
                                 placeholder='Nom de votre page'
                                 className='input input-bordered input-sm w-fill'
-                                //value={ne}
+                                value={newPageName}
+                                onChange={(e) => setNewPageName(e.target.value)}
+                                disabled={loading}
                             />
                             <button
                                 className='btn btn-sm w-fit btn-primary'
+                                disabled={loading}
+                                onClick={handleSave}
                             >
-                                Enregistrer
+                                {loading? "Enregistrement..." : "Enregistrer"}
                             </button>
                         </div>
                     )}

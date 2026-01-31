@@ -5,7 +5,7 @@ import Wrapper from '../components/Wrapper'
 import { useUser } from '@clerk/nextjs'
 import { createService, deleteServiceById, getServiceByEmail } from '../actions'
 import { Service } from '../generated/prisma/browser'
-import { Clock2, Trash } from 'lucide-react'
+import { Clock2, ClockArrowUp, Trash } from 'lucide-react'
 
 const page = () => {
 
@@ -76,7 +76,7 @@ const page = () => {
 
             <span className='label-text'>Temps Moyen (en minutes)</span>
             <label className='input input-bordered flex items-center input-sm gap-2'>
-                Temps Moyen
+                <ClockArrowUp className='w-4 h-4'/>
                 <input
                   type="number"
                   className="grow"

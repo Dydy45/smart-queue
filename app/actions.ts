@@ -96,3 +96,21 @@ export async function getCompanyPageName(email: string) {
         console.error(error)
     }
 }
+
+export async function setCompanyPageName(email: string, pageName: string) {
+    try {
+        // eslint-disable-next-line @typescript-eslint/no-unused-vars
+        const company = await prisma.company.findUnique({
+            where: {
+                email: email
+            }
+        })
+        await prisma.company.update({
+            where: { email },
+            data: { pageName }
+        })
+    } catch (error) {
+        console.error(error)
+    }
+
+}
