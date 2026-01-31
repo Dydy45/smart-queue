@@ -3,7 +3,7 @@
 import React, { useEffect, useState } from 'react'
 import Wrapper from '../components/Wrapper'
 import { useUser } from '@clerk/nextjs'
-import { createService, getServiceByEmail } from '../actions'
+import { createService, deleteServiceById, getServiceByEmail } from '../actions'
 import { Service } from '../generated/prisma/browser'
 import { Clock2, Trash } from 'lucide-react'
 
@@ -47,7 +47,20 @@ const page = () => {
 
     useEffect(() => {
       fetchServices()
+    // eslint-disable-next-line react-hooks/exhaustive-deps
     }, [email])
+
+    const handleDeleteService = async (serviceId: string) => {
+      const confirmation = window.confirm("Êtes-vous sûr de vouloir supprimer ce service ? tous les rendez-vous associés seront également supprimés.")
+      if (confirmation) {
+        try {
+          await deleteServiceById(Number(serviceId))
+          fetchServices()
+        } catch (error) {
+          console.error("Error deleting service:", error)
+        }
+      }
+    }
 
 
   return (
@@ -97,7 +110,11 @@ const page = () => {
                       <td>{service.name}</td>
                       <td className='flex items-center'> <Clock2 className="w-4 h-4 inline mr-2" />{service.avgTime} min</td>
                       <td>
-                        <button className='btn btn-xs btn-error'>
+                        <button
+                        
+                         className='btn btn-xs btn-error'
+                         onClick={() => handleDeleteService(service.id)}
+                        >
                           <Trash className="w-4 h-4" />
                         </button>
                       </td>

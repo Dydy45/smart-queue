@@ -60,3 +60,19 @@ export async function getServiceByEmail(email: string) {
         console.error("Error in getServiceByEmail:", error)
     }
 }
+
+export async function deleteServiceById(serviceId: number) {
+    if (!serviceId) return
+    try {
+        const service = await prisma.service.findUnique ({
+            where: { id: serviceId }
+        })
+
+        await prisma.service.delete ({
+            where: { id: serviceId }
+        })
+
+    } catch (error) {
+        console.error("Error in deleteServiceById:", error)
+    }
+}
