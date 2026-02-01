@@ -7,15 +7,14 @@ interface EmptyStateProps {
     sm? : boolean
 }
 
-// eslint-disable-next-line @typescript-eslint/no-unused-vars
 const EmptyState : FC<EmptyStateProps> = ({IconComponent, message, sm}) => {
     const SelectedIcon = icons[IconComponent]
   return (
-    <div>
-      <div>
-        <SelectedIcon />
+    <div className={`${sm ? 'my-4' : 'my-40'}w-full h-full flex justify-center items-center flex-col`}>
+      <div className=''>
+        <SelectedIcon strokeWidth={1} className={`${sm ? 'w-20 h-20' : 'w-40 h-40'} `}/>
       </div>
-      <p>{message}</p>
+      <p className='text-sm'>{message}</p>
     </div>
   )
 }
