@@ -6,6 +6,7 @@ import { useUser } from '@clerk/nextjs'
 import { createService, deleteServiceById, getServiceByEmail } from '../actions'
 import { Service } from '../generated/prisma/browser'
 import { Clock2, ClockArrowUp, Trash } from 'lucide-react'
+import EmptyState from '../components/EmptyState'
 
 const page = () => {
 
@@ -96,7 +97,9 @@ const page = () => {
               <span className="loading loading-spinner loading-xs"></span>
             </div>
           ) : services.length === 0 ?  (
-            <div></div>
+            <div>
+              <EmptyState IconComponent={'Telescope'} message={'Aucun service pour le moment'} />
+            </div>
           ) : (
             <div>
               <div className="overflow-x-auto">
