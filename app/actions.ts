@@ -205,7 +205,7 @@ export async function getPendingTicketsByEmail(email:string) {
             service.tickets.map((Ticket) => ({
                 ...Ticket,
                 serviceName : service.name,
-                avgTimage : service.avgTime
+                avgTime : service.avgTime
             }))
         )
 
