@@ -154,6 +154,7 @@ export async function createTicket(serviceId:string , nameComplete:string , page
 
         const ticketNum = `A${Math.floor(Math.random() * 10000)}`
 
+        // eslint-disable-next-line @typescript-eslint/no-unused-vars
         const ticket = await prisma.ticket.create({
             data: {
                 serviceId,
@@ -163,10 +164,7 @@ export async function createTicket(serviceId:string , nameComplete:string , page
             }
         })
 
-        return {
-            ticketNum,
-            createAt: ticket.createdAt
-        }
+        return ticketNum
 
     } catch (error) {
         console.error(error)
