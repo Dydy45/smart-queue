@@ -31,7 +31,7 @@ const page = ({params} : {params: Promise<{pageName: string}>}) => {
   return (
     <div className='px-5 md:px-[10%] mt-8 mb-10'>
       <div className=''>
-        <h1 className='text-2xl font-bold'>Bienvenue sur <span className='badge badge-secondary ml-2'>@{pageName}</span></h1>
+        <h1 className='text-2xl font-bold'>Bienvenue sur <span className='badge badge-primary ml-2'>@{pageName}</span></h1>
         <p className='text-md'>Créez votre ticket</p>
       </div>
       <div className='flex flex-col md:flex-row w-full mt-4'>
@@ -47,10 +47,9 @@ const page = ({params} : {params: Promise<{pageName: string}>}) => {
           <input
             type='text'
             placeholder='Quel est votre nom ?'
-            w-full
             className='input input-bordered w-full'
           />
-          <button className='btn btn-secondary w-fit'>Go</button>
+          <button className='btn btn-primary w-fit'>Go</button>
         </form>
       </div>
     </div>

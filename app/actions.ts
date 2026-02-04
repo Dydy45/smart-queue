@@ -123,6 +123,10 @@ export async function getServicesByPageName(pageName: string) {
             }
         })
 
+        if(!company) {
+            throw new Error(`Aucune entreprise trouvée avec le nom de page : ${pageName}`)
+        }
+
         const services = await prisma.service.findMany({
             where: { companyId: company?.id },
             include: {
