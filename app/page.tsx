@@ -41,10 +41,15 @@ export default function Home() {
 
           {
             tickets.map((ticket, index) => {
+              const totalWaitTime = tickets
+              .slice(0, index)
+              .reduce((acc , prevTicket) => acc + prevTicket.avgTime, 0)
               return (
                 <TicketComponent 
                 key={ticket.id}
                 ticket={ticket}
+                totalWaitTime={totalWaitTime}
+                index={index}
               />
               )
             })
