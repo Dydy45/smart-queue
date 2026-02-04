@@ -114,3 +114,24 @@ export async function setCompanyPageName(email: string, pageName: string) {
     }
 
 }
+
+export async function getServicesByPageName(pageName: string) {
+    try {
+        const company = await prisma.company.findUnique({
+            where: {
+                pageName: pageName
+            }
+        })
+
+        const services = await prisma.service.findMany({
+            where: { companyId: company?.id },
+            include: {
+                company: true
+            }
+        })
+        return services
+
+    } catch (error) {
+        console.error(error)
+    }
+}
