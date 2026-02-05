@@ -1,7 +1,11 @@
 "use client"
 /* eslint-disable react-hooks/rules-of-hooks */
-import { createTicket, getServicesByPageName } from '@/app/actions'
+import { createTicket, getServicesByPageName, getTicketsByIds } from '@/app/actions'
+import EmptyState from '@/app/components/EmptyState'
+import TicketComponent from '@/app/components/TicketComponent'
 import { Service } from '@/app/generated/prisma/client'
+import { Ticket } from '@/app/type'
+
 import { useState, useEffect } from 'react'
 
 
@@ -11,6 +15,8 @@ const page = ({params} : {params: Promise<{pageName: string}>}) => {
   const [services, setServices] = useState<Service[]>([])
   const [selectedServiceId, setSelectedServiceId] = useState<string | null>(null)
   const [nameComplete, setNameComplete] = useState<string>("")
+  const [ticketNums, setTicketNums] = useState<unknown[]>([])
+  const [tickets, setTickets] = useState<Ticket[]>([])
 
     const resolveParamsAndFetchServices = async () => {
       try {
@@ -27,8 +33,32 @@ const page = ({params} : {params: Promise<{pageName: string}>}) => {
 
     useEffect(() =>{
       resolveParamsAndFetchServices()
+
+      const savedTicketNums = JSON.parse(localStorage.getItem('ticketNums') || '[]')
+      setTicketNums(savedTicketNums)
+
+      if(savedTicketNums.lenght > 0) {
+        fetchTicketsByIds(savedTicketNums)
+      }
+
       // eslint-disable-next-line react-hooks/exhaustive-deps
     }, [])
+
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const fetchTicketsByIds = async (ticketNums : any[]) => {
+      try {
+        const fetchedTickets = await getTicketsByIds(ticketNums)
+        const validTickets = fetchedTickets?.filter(ticket => ticket.status !== "FINISHED")
+        const validTicketNums = validTickets?.map(Ticket => Ticket.num)
+        
+        localStorage.setItem('ticketNums' , JSON.stringify(validTicketNums))
+        if(validTickets)
+          setTickets(validTickets)
+
+      } catch (error) {
+        console.error(error)
+      }
+    }
 
     const handleSubmit = async (e:React.FormEvent) => {
       e.preventDefault()
@@ -37,10 +67,15 @@ const page = ({params} : {params: Promise<{pageName: string}>}) => {
         return
       }
       try {
-        // eslint-disable-next-line @typescript-eslint/no-unused-vars
         const ticketNum = await createTicket(selectedServiceId, nameComplete, pageName || '')
         setSelectedServiceId(null)
         setNameComplete("")
+        const updatedTicketNums = [...ticketNums , ticketNum]
+        setTicketNums(updatedTicketNums)
+        localStorage.setItem("TicketNums", JSON.stringify(updatedTicketNums))
+
+        console.log(ticketNums)
+
       } catch (error) {
         console.error(error)
       }
@@ -76,6 +111,32 @@ const page = ({params} : {params: Promise<{pageName: string}>}) => {
           />
           <button type='submit' className='btn btn-primary w-fit'>Go</button>
         </form>
+
+        {tickets.length === 0 ? (
+                <div>
+                  <EmptyState IconComponent={'Bird'} message={'Aucun ticket en attente'} />
+                </div>
+              ) : (
+                <div className="grid grid-cols-1 gap-4">
+
+                  {
+                    tickets.map((ticket, index) => {
+                      const totalWaitTime = tickets
+                      .slice(0, index)
+                      .reduce((acc , prevTicket) => acc + prevTicket.avgTime, 0)
+                      return (
+                        <TicketComponent 
+                        key={ticket.id}
+                        ticket={ticket}
+                        totalWaitTime={totalWaitTime}
+                        index={index}
+                      />
+                      )
+                    })
+                  }
+
+                </div>
+              )}
 
       </div>
     </div>

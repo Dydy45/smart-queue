@@ -201,7 +201,7 @@ export async function getPendingTicketsByEmail(email:string) {
         if(!company) {
             throw new Error(`Aucune entreprise trouvée avec le nom de page : ${email}`)
         }
-        const pendingTickets = company.services.flatMap((service) =>
+        let pendingTickets = company.services.flatMap((service) =>
             service.tickets.map((Ticket) => ({
                 ...Ticket,
                 serviceName : service.name,
@@ -209,8 +209,45 @@ export async function getPendingTicketsByEmail(email:string) {
             }))
         )
 
+        pendingTickets = pendingTickets.sort(
+            (a,b) => new Date(a.createdAt).getTime() - new Date(b.createdAt).getTime()
+        )
+
         return pendingTickets
          
+    } catch (error) {
+        console.error(error)
+    }
+}
+
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+export async function getTicketsByIds(ticketNums : any[]) {
+    try {
+        const tickets = await prisma.ticket.findMany({
+            where : {
+                num : {
+                    in : ticketNums
+                }
+            },
+            orderBy : {
+                createdAt : 'asc'
+            },
+            include : {
+                service : true,
+                post : true
+            }
+        })
+
+        if(ticketNums.length == 0) {
+            throw new Error('Aucun ticket trouvé');
+        }
+
+        return tickets.map(ticket => ({
+            ...ticket,
+            serviceName: ticket.service.name,
+            avgTime: ticket.service.avgTime
+        }))
+        
     } catch (error) {
         console.error(error)
     }

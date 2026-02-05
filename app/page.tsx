@@ -12,6 +12,8 @@ export default function Home() {
   const email = user?.primaryEmailAddress?.emailAddress
   const [tickets, setTickets] = useState<Ticket[]>([])
 
+  const [countdown, setCountdown] = useState<number>(5)
+
   const fetchTickets = async () => {
     if(email) {
       try {
@@ -30,8 +32,39 @@ export default function Home() {
   // eslint-disable-next-line react-hooks/exhaustive-deps
   } , [email])
 
+  useEffect (() => {
+    const handleCountdownAndRefresh = () => {
+      if(countdown === 0){
+        fetchTickets()
+        setCountdown(5)
+      }else {
+        setCountdown((prevCountdown) => prevCountdown - 1)
+      }
+    }
+
+    const timeoutId = setTimeout(handleCountdownAndRefresh, 1000)
+
+    return () => clearTimeout(timeoutId)
+
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  } , [countdown])
+
   return (
     <Wrapper>
+
+      <div className="flex justify-between mb-4">
+        <h1 className="text-2xl font-bold">Vos tickets</h1>
+        <div className="flex items-center">
+          <span className="relative flex size-3">
+            <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-accent/30 opacity-75"></span>
+            <span className="relative inline-flex size-3 rounded-full bg-accent"></span>
+          </span>
+          <div className="ml-2">
+            ({countdown}s)
+          </div>
+        </div>
+      </div>
+
       {tickets.length === 0 ? (
         <div>
           <EmptyState IconComponent={'Bird'} message={'Aucun ticket en attente'} />
