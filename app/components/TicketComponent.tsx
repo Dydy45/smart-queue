@@ -25,6 +25,7 @@ const getStatusBadge = (status: string) => {
 
 
 
+// eslint-disable-next-line @typescript-eslint/no-unused-vars
 const TicketComponent: React.FC<TicketComponentProps> = ({ ticket, index, totalWaitTime = 0 }) => {
 
     const totalHours = Math.floor(totalWaitTime / 60)
@@ -71,7 +72,7 @@ const TicketComponent: React.FC<TicketComponentProps> = ({ ticket, index, totalW
                         {ticket?.serviceName}
                     </span>
                     {ticket.avgTime && (
-                        <span className='badge badge-accent ml-2'>
+                        <span className='badge badge-primary ml-2'>
                             {ticket.avgTime} min
                         </span>
                     )}
@@ -94,7 +95,7 @@ const TicketComponent: React.FC<TicketComponentProps> = ({ ticket, index, totalW
 
             {ticket.status !== "IN_PROGRESS" && ticket.status !== "FINISHED" && (
                 <div className='border border-base-300 rounded-xl p-5'>
-                    <span className='badge badge-accent badge-outline'>Attente</span>
+                    <span className='badge badge-warning badge-outline'>Attente</span>
                     <ul className="timeline timeline-vertical lg:timeline-horizontal w-full">
 
                         {totalWaitTime !== 0 && (
