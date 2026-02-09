@@ -252,3 +252,66 @@ export async function getTicketsByIds(ticketNums : any[]) {
         console.error(error)
     }
 }
+
+export async function createPost (email: string, postName: string) {
+    try {
+        const company = await prisma.company.findUnique({
+            where: {
+                email: email
+            }
+        })
+
+        if(!company) {
+            throw new Error(`Aucune entreprise trouvée avec cet Email`)
+        }
+
+        // eslint-disable-next-line @typescript-eslint/no-unused-vars
+        const newPost = await prisma.post.create({
+            data: {
+                name : postName,
+                companyId : company.id
+            }
+        })
+    } catch (error) {
+        console.error(error)
+    }
+}
+
+export async function deletePost (postId: string) {
+    try {
+        await prisma.post.delete({
+            where: {
+                id : postId
+            }
+        })
+    } catch (error) {
+        console.error(error)
+    }
+}
+
+export async function getPostsByCompanyEmail(email: string) {
+    try {
+        const company = await prisma.company.findUnique({
+            where: {
+                email: email
+            }
+        })
+
+        if (!company) {
+            throw new Error(`Aucune entreprise trouvée avec cet email`);
+        }
+
+        const posts = await prisma.post.findMany({
+            where: {
+                companyId: company.id
+            },
+            include: {
+                company: true
+            }
+        })
+        return posts
+
+    } catch (error) {
+        console.error(error)
+    }
+}
