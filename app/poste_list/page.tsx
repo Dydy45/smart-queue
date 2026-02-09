@@ -9,6 +9,7 @@ import { Post } from '@/app/generated/prisma/client'
 import { createPost, deletePost, getPostsByCompanyEmail } from '../actions'
 import { Trash } from 'lucide-react'
 import EmptyState from "../components/EmptyState";
+import Link from 'next/link'
 
 const page = () => {
 
@@ -84,9 +85,9 @@ const page = () => {
                   {post.name}
                 </div>
                 <div className='flex items-center mt-2'>
-                  <a href={`/poste/${post.id}`} className='btn btn-sm btn-primary'>
+                  <Link href={`/poste/${post.id}`} className='btn btn-sm btn-primary'>
                     Traiter des tickets
-                  </a>
+                  </Link>
                   <button className='btn btn-sm btn-primary btn-outline ml-2' onClick={() => handleDeletePost(post.id)}>
                     <Trash className='w-4 h-4' />
                   </button>

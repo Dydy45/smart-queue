@@ -7,6 +7,7 @@ import { Ticket } from '@/app/type';
 import Wrapper from "@/app/components/Wrapper";
 import EmptyState from "@/app/components/EmptyState";
 import TicketComponent from "@/app/components/TicketComponent";
+import Link from 'next/link'
 
 const page = ({ params }: { params: Promise<{ idPoste: string }> }) => {
     const {user} = useUser()
