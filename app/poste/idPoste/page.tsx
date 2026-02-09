@@ -1,13 +1,15 @@
+/* eslint-disable react-hooks/exhaustive-deps */
 /* eslint-disable @typescript-eslint/no-unused-vars */
 /* eslint-disable react-hooks/rules-of-hooks */
 "use client"
-import React, { useState } from 'react'
-import { useUser } from '@clerk/nextjs'
-import { Ticket } from '@/app/type';
-import Wrapper from "@/app/components/Wrapper";
-import EmptyState from "@/app/components/EmptyState";
-import TicketComponent from "@/app/components/TicketComponent";
-import Link from 'next/link'
+import { getPendingTicketsByEmail } from "@/app/actions"
+import EmptyState from "@/app/components/EmptyState"
+import TicketComponent from "@/app/components/TicketComponent"
+import Wrapper from "@/app/components/Wrapper"
+import { Ticket } from "@/app/type"
+import { useUser } from "@clerk/nextjs"
+import { useState, useEffect } from "react"
+
 
 const page = ({ params }: { params: Promise<{ idPoste: string }> }) => {
     const {user} = useUser()
@@ -15,6 +17,38 @@ const page = ({ params }: { params: Promise<{ idPoste: string }> }) => {
     const [tickets, setTickets] = useState<Ticket[]>([])
 
     const [countdown, setCountdown] = useState<number>(5)
+
+    const fetchTickets = async () => {
+        if(email) {
+          try {
+            const fetchedTickets = await getPendingTicketsByEmail(email);
+            if(fetchedTickets) {
+              setTickets(fetchedTickets)
+            }
+          } catch (error) {
+            console.error(error)
+          }
+        }
+      }
+    
+      useEffect (() => {
+        fetchTickets()
+      } , [email])
+
+    useEffect (() => {
+        const handleCountdownAndRefresh = () => {
+          if(countdown === 0){
+            fetchTickets()
+            setCountdown(5)
+          }else {
+            setCountdown((prevCountdown) => prevCountdown - 1)
+          }
+        }
+    
+        const timeoutId = setTimeout(handleCountdownAndRefresh, 1000)
+    
+        return () => clearTimeout(timeoutId)
+      } , [countdown])
 
   return (
     <Wrapper>
@@ -57,8 +91,9 @@ const page = ({ params }: { params: Promise<{ idPoste: string }> }) => {
 
         </div>
       )}
+
     </Wrapper>
-  );
+  )
 }
 
 export default page

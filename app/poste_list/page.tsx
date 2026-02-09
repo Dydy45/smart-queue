@@ -16,7 +16,7 @@ const page = () => {
   const {user} = useUser()
   const email = user?.primaryEmailAddress?.emailAddress as string
 
-  const [newPostName, setNewPostName] = useState('')
+  const [newPostName, setNewPostName] = useState('');
   const [loading, setLoading] = useState<boolean>(false)
 
   const [posts, setPosts] = useState<Post[]>([])
@@ -38,11 +38,14 @@ const page = () => {
   const handleCreatePost = async() => {
     if(!newPostName) return
     setLoading(true)
+
     try {
+
       const newPost = await createPost(email, newPostName)
       setLoading(false)
       setNewPostName("")
       fetchPosts()
+      
     } catch (error) {
       console.error(error)
     }
