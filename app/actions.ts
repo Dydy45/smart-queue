@@ -315,3 +315,19 @@ export async function getPostsByCompanyEmail(email: string) {
         console.error(error)
     }
 }
+
+export async function getPostNameById(postId: string) {
+    try {
+        const post = await prisma.post.findUnique({
+            where: {id: postId },
+            select: {name: true}
+        })
+        if(post){
+            return post.name
+        }else {
+            throw new Error('Poste non trouvé')
+        }
+    } catch (error) {
+        console.error(error)
+    }
+}

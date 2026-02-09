@@ -54,7 +54,7 @@ const page = ({ params }: { params: Promise<{ idPoste: string }> }) => {
     <Wrapper>
 
       <div className="flex justify-between mb-4">
-        <h1 className="text-2xl font-bold">Vos tickets</h1>
+        <h1 className="text-2xl font-bold"><span>Poste</span> <span></span></h1>
         <div className="flex items-center">
           <span className="relative flex size-3">
             <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-accent/30 opacity-75"></span>
