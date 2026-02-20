@@ -403,3 +403,51 @@ export async function updateTicketStatus(ticketId: string, newStatus: string) {
         console.error(error)
     }
 }
+
+export async function get10LstFinishedTicketsByEmail(email: string) {
+    try {
+        const tickets = await prisma.ticket.findMany({
+            where: {
+                status: "FINISHED",
+                service: { company: { email: email } }
+            },
+            orderBy: { createdAt: "desc" },
+            take: 10,
+            include: { service: true, post: true }
+        })
+
+        return tickets.map(ticket => ({
+            ...ticket,
+            serviceName: ticket.service?.name,
+            avgTime: ticket.service?.avgTime,
+        }))
+    } catch (error) {
+        console.error(error)
+    }
+}
+
+export async function getTicketStatsByEmail(email: string) {
+    try {
+        const tickets = await prisma.ticket.findMany({
+            where: {
+                service: { company: { email: email } }
+            }
+        })
+        const totalTickets = tickets.length
+        const resolvedTickets = tickets.filter(ticket => ticket.status === "FINISHED").length
+        const pendingTickets = tickets.filter(ticket => ticket.status === "PENDING").length
+
+        return {
+            totalTickets,
+            resolvedTickets,
+            pendingTickets
+        }
+    } catch (error) {
+        console.error(error)
+        return {
+            totalTickets: 0,
+            resolvedTickets: 0,
+            pendingTickets: 0
+        }
+    }
+}
