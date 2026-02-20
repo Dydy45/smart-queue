@@ -15,7 +15,7 @@ const getStatusBadge = (status: string) => {
         case "PENDING":
             return <div className='badge badge-warning'>En attente</div>
         case "CALL":
-            return <div className='badge badge-info'>C&aposest votre tour</div>
+            return <div className='badge badge-info'>C&apos;est votre tour</div>
         case "FINISHED":
             return <div className='badge badge-success'>Servi</div>
         default:

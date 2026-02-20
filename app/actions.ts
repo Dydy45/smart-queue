@@ -331,3 +331,75 @@ export async function getPostNameById(postId: string) {
         console.error(error)
     }
 }
+
+export async function getLastTicketByEmail(email: string, idPoste: string) {
+    try {
+        const existingTicket = await prisma.ticket.findFirst({
+            where: {
+                postId: idPoste,
+                status: { in: ["CALL", "IN_PROGRESS"] }
+            },
+            orderBy: { createdAt: "desc" },
+            include: { service: true, post: true }
+        })
+
+        if (existingTicket && existingTicket.service) {
+            return {
+                ...existingTicket,
+                serviceName: existingTicket.service.name,
+                avgTime: existingTicket.service.avgTime
+            }
+
+        }
+
+        const ticket = await prisma.ticket.findFirst({
+            where: {
+                status: "PENDING",
+                service: { company: { email: email } }
+            },
+            orderBy: { createdAt: "desc" },
+            include: { service: true, post: true }
+        })
+
+        if (!ticket || !ticket?.service) return null
+
+        const post = await prisma.post.findUnique({
+            where: { id: idPoste }
+        })
+
+        if (!post) {
+            console.error(`Aucun poste trouvé pour l'ID: ${idPoste}`);
+            return null;
+        }
+
+        const updatedTicket = await prisma.ticket.update({
+            where: { id: ticket.id },
+            data: {
+                status: "CALL",
+                postId: post.id,
+                postName: post.name
+            },
+            include: { service: true }
+        })
+
+        return {
+            ...updatedTicket,
+            serviceName: updatedTicket.service.name,
+            avgTime: updatedTicket.service.avgTime
+        }
+
+    } catch (error) {
+        console.error(error)
+    }
+}
+
+export async function updateTicketStatus(ticketId: string, newStatus: string) {
+    try {
+        await prisma.ticket.update({
+            where: { id: ticketId },
+            data: { status: newStatus }
+        })
+    } catch (error) {
+        console.error(error)
+    }
+}

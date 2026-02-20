@@ -2,12 +2,14 @@
 /* eslint-disable @typescript-eslint/no-unused-vars */
 /* eslint-disable react-hooks/rules-of-hooks */
 "use client"
-import { getPendingTicketsByEmail } from "@/app/actions"
+import { getPendingTicketsByEmail, getPostNameById } from "@/app/actions"
 import EmptyState from "@/app/components/EmptyState"
 import TicketComponent from "@/app/components/TicketComponent"
 import Wrapper from "@/app/components/Wrapper"
 import { Ticket } from "@/app/type"
 import { useUser } from "@clerk/nextjs"
+import Link from "next/link"
+import { Console } from "node:console"
 import { useState, useEffect } from "react"
 
 
@@ -17,6 +19,9 @@ const page = ({ params }: { params: Promise<{ idPoste: string }> }) => {
     const [tickets, setTickets] = useState<Ticket[]>([])
 
     const [countdown, setCountdown] = useState<number>(5)
+
+    const [idPoste, setIdPoste] = useState< string | null > (null)
+    const [namePoste, setNamePoste] = useState< string | null > (null)
 
     const fetchTickets = async () => {
         if(email) {
@@ -50,11 +55,29 @@ const page = ({ params }: { params: Promise<{ idPoste: string }> }) => {
         return () => clearTimeout(timeoutId)
       } , [countdown])
 
+      const getPosteName = async () => {
+        try {
+          const resolvedParams = await params;
+          setIdPoste(resolvedParams.idPoste)
+
+          const posteName = await getPostNameById(resolvedParams.idPoste)
+          if(posteName) {
+            setNamePoste(posteName)
+          }
+        } catch (error) {
+          console.error(error)
+        }
+      }
+
+      useEffect (() => {
+        getPosteName()
+      } , [params])
+
   return (
     <Wrapper>
 
       <div className="flex justify-between mb-4">
-        <h1 className="text-2xl font-bold"><span>Poste</span> <span></span></h1>
+        <h1 className="text-2xl font-bold"><span>Poste</span> <span className="badge badge-primary">{namePoste ?? "Aucun poste"}</span></h1>
         <div className="flex items-center">
           <span className="relative flex size-3">
             <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-accent/30 opacity-75"></span>
@@ -63,6 +86,9 @@ const page = ({ params }: { params: Promise<{ idPoste: string }> }) => {
           <div className="ml-2">
             ({countdown}s)
           </div>
+          <Link href={`/call/${idPoste}`} className={`ml-4 btn btn-sm ${!namePoste && "btn-disabled"}`}>
+            Appeler le suivant
+          </Link>
         </div>
       </div>
 
