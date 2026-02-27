@@ -339,7 +339,7 @@ export async function getLastTicketByEmail(email: string, idPoste: string) {
                 postId: idPoste,
                 status: { in: ["CALL", "IN_PROGRESS"] }
             },
-            orderBy: { createdAt: "desc" },
+            orderBy: { createdAt: "asc" },
             include: { service: true, post: true }
         })
 
@@ -357,7 +357,7 @@ export async function getLastTicketByEmail(email: string, idPoste: string) {
                 status: "PENDING",
                 service: { company: { email: email } }
             },
-            orderBy: { createdAt: "desc" },
+            orderBy: { createdAt: "asc" },
             include: { service: true, post: true }
         })
 
