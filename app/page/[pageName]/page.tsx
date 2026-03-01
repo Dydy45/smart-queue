@@ -1,7 +1,7 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 /* eslint-disable react-hooks/rules-of-hooks */
 "use client"
-import { createTicket, getServicesByPageName, getTicketsByIds } from '@/app/actions'
+import { createTicket, getServicesByPageName, getTicketsByIds, getTicketsWithContext } from '@/app/actions'
 import TicketComponent from '@/app/components/TicketComponent'
 import { Service } from '@/app/generated/prisma/client'
 import { Ticket } from '@/app/type'
@@ -13,6 +13,7 @@ import React, { use, useEffect, useState } from 'react'
 const page = ({ params }: { params: Promise<{ pageName: string }> }) => {
 
   const [tickets, setTickets] = useState<Ticket[]>([])
+  const [allTickets, setAllTickets] = useState<Ticket[]>([])
   const [pageName, setPageName] = useState<string | null>(null)
   const [services, setServices] = useState<Service[]>([])
   const [selectedServiceId, setSelectedServiceId] = useState<string | null>(null)
@@ -55,15 +56,31 @@ const page = ({ params }: { params: Promise<{ pageName: string }> }) => {
 
   const fetchTicketsByIds = async (ticketNums: any[]) => {
     try {
-      const fetchedTickets = await getTicketsByIds(ticketNums)
-      const validTickets = fetchedTickets?.filter(ticket => ticket.status !== "FINISHED")
+      // Utiliser la nouvelle fonction pour avoir le contexte complet
+      const { clientTickets, allTickets: allPendingTickets } = await getTicketsWithContext(ticketNums, pageName || '')
+
+      const validTickets = clientTickets?.filter(ticket => ticket.status !== "FINISHED")
       const validTicketNums = validTickets?.map(ticket => ticket.num)
       localStorage.setItem('ticketNums', JSON.stringify(validTicketNums))
-      if (validTickets)
+
+      if (validTickets) {
         setTickets(validTickets)
+        setAllTickets(allPendingTickets)
+      }
 
     } catch (error) {
       console.error(error)
+      // Fallback à l'ancienne fonction si quelque chose se passe mal
+      try {
+        const fetchedTickets = await getTicketsByIds(ticketNums)
+        const validTickets = fetchedTickets?.filter(ticket => ticket.status !== "FINISHED")
+        const validTicketNums = validTickets?.map(ticket => ticket.num)
+        localStorage.setItem('ticketNums', JSON.stringify(validTicketNums))
+        if (validTickets)
+          setTickets(validTickets)
+      } catch (fallbackError) {
+        console.error(fallbackError)
+      }
     }
   }
 
@@ -166,9 +183,16 @@ const page = ({ params }: { params: Promise<{ pageName: string }> }) => {
               <div className="grid grid-cols-1 gap-4">
 
                 {tickets.map((ticket, index) => {
-                  const totalWaitTime = tickets
-                    .slice(0, index)
-                    .reduce((acc, prevTicket) => acc + prevTicket.avgTime, 0)
+                  // Utiliser allTickets pour calculer le temps d'attente correct
+                  // en tenant compte de TOUS les tickets en attente, pas seulement ceux du client
+                  const totalWaitTime = allTickets && allTickets.length > 0
+                    ? allTickets
+                        .filter(t => t.createdAt < ticket.createdAt && t.serviceId === ticket.serviceId)
+                        .reduce((acc, prevTicket) => acc + prevTicket.avgTime, 0)
+                    : tickets
+                        .slice(0, index)
+                        .reduce((acc, prevTicket) => acc + prevTicket.avgTime, 0)
+
                   return (
                     <TicketComponent
                       key={ticket.id}

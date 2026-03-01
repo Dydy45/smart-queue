@@ -451,3 +451,86 @@ export async function getTicketStatsByEmail(email: string) {
         }
     }
 }
+
+export async function getTicketsWithContext(ticketNums: never[], pageName: string) {
+    try {
+        // 1. Récupérer les tickets du client
+        const clientTickets = await prisma.ticket.findMany({
+            where: {
+                num: {
+                    in: ticketNums
+                }
+            },
+            orderBy: {
+                createdAt: 'asc'
+            },
+            include: {
+                service: true,
+                post: true
+            }
+        })
+
+        if (ticketNums.length === 0 || !clientTickets || clientTickets.length === 0) {
+            throw new Error('Aucun ticket trouvé')
+        }
+
+        // 2. Récupérer l'entreprise
+        const company = await prisma.company.findUnique({
+            where: {
+                pageName: pageName
+            }
+        })
+
+        if (!company) {
+            throw new Error(`Aucune entreprise trouvée avec le pageName: ${pageName}`)
+        }
+
+        // 3. Récupérer TOUS les tickets en attente de l'entreprise
+        // pour avoir le contexte complet de la queue
+        const allPendingTickets = await prisma.ticket.findMany({
+            where: {
+                status: {
+                    in: ["PENDING", "CALL", "IN_PROGRESS"]
+                },
+                service: {
+                    companyId: company.id
+                }
+            },
+            orderBy: {
+                createdAt: 'asc'
+            },
+            include: {
+                service: true,
+                post: true
+            }
+        })
+
+        // 4. Filtrer pour ne garder que les tickets non-FINISHED du client
+        const validClientTickets = clientTickets.filter(t => t.status !== "FINISHED")
+
+        // 5. Enrichir les données avec serviceName et avgTime
+        const enrichedClientTickets = validClientTickets.map(ticket => ({
+            ...ticket,
+            serviceName: ticket.service.name,
+            avgTime: ticket.service.avgTime
+        }))
+
+        const enrichedAllTickets = allPendingTickets.map(ticket => ({
+            ...ticket,
+            serviceName: ticket.service.name,
+            avgTime: ticket.service.avgTime
+        }))
+
+        return {
+            clientTickets: enrichedClientTickets,
+            allTickets: enrichedAllTickets
+        }
+
+    } catch (error) {
+        console.error(error)
+        return {
+            clientTickets: [],
+            allTickets: []
+        }
+    }
+}
