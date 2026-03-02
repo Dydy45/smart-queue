@@ -1,16 +1,32 @@
 "use server"
 
 import prisma from '@/lib/prisma'
+import { verifyCompanyOwnership, getCurrentUserEmail } from '@/lib/auth'
+import {
+  serviceNameSchema,
+  pageNameSchema,
+  customerNameSchema,
+  postNameSchema,
+  avgTimeSchema,
+  emailSchema
+} from '@/lib/validation'
 
 export async function checkAndAddUser(email: string, name: string) {
     if (!email) return
     try {
+        // Verify ownership
+        await verifyCompanyOwnership(email)
+
+        // Validation
+        const validatedEmail = emailSchema.parse(email)
+        const validatedName = customerNameSchema.parse(name)
+
         const existingUser = await prisma.company.findUnique({
-            where: { email: email }
+            where: { email: validatedEmail }
         })
-        if (!existingUser && name) {
+        if (!existingUser && validatedName) {
             await prisma.company.create({
-                data: { email, name }
+                data: { email: validatedEmail, name: validatedName }
             })
         }
     } catch (error) {
@@ -21,20 +37,28 @@ export async function checkAndAddUser(email: string, name: string) {
 export async function createService(email: string, serviceName: string, avgTime: number) {
     if (!email || !serviceName || avgTime == null) return
     try {
+        // Verify ownership
+        await verifyCompanyOwnership(email)
+
+        // Validation
+        const validatedEmail = emailSchema.parse(email)
+        const validatedServiceName = serviceNameSchema.parse(serviceName)
+        const validatedAvgTime = avgTimeSchema.parse(avgTime)
+
         const existingCompany = await prisma.company.findUnique({
-            where: { email: email }
+            where: { email: validatedEmail }
         })
         if (existingCompany) {
             // eslint-disable-next-line @typescript-eslint/no-unused-vars
             const newService = await prisma.service.create({
                 data: {
-                    name: serviceName,
-                    avgTime: avgTime,
+                    name: validatedServiceName,
+                    avgTime: validatedAvgTime,
                     companyId: existingCompany.id
                 }
             })
         } else {
-            console.error("Company not found for email:", email)
+            console.error("Company not found for email:", validatedEmail)
         }
     } catch (error) {
         console.error("Error in createService:", error)
@@ -42,10 +66,16 @@ export async function createService(email: string, serviceName: string, avgTime:
 }
 
 export async function getServiceByEmail(email: string) {
-    if (!email) return 
+    if (!email) return
     try {
+        // Verify ownership
+        await verifyCompanyOwnership(email)
+
+        // Validation
+        const validatedEmail = emailSchema.parse(email)
+
         const company = await prisma.company.findUnique({
-            where: { email: email }
+            where: { email: validatedEmail }
         })
         if (!company) {
             throw new Error("Company not found")
@@ -64,10 +94,25 @@ export async function getServiceByEmail(email: string) {
 export async function deleteServiceById(serviceId: string) {
     if (!serviceId) return
     try {
-        // eslint-disable-next-line @typescript-eslint/no-unused-vars
+        // Get authenticated user
+        const userEmail = await getCurrentUserEmail()
+        if (!userEmail) {
+            throw new Error('Authentification requise')
+        }
+
+        // Verify service belongs to user's company
         const service = await prisma.service.findUnique({
-            where: { id: serviceId }
+            where: { id: serviceId },
+            include: { company: true }
         })
+
+        if (!service) {
+            throw new Error('Service non trouvé')
+        }
+
+        if (service.company.email.toLowerCase() !== userEmail.toLowerCase()) {
+            throw new Error('Vous n\'avez pas accès à ce service')
+        }
 
         await prisma.service.delete({
             where: { id: serviceId }
@@ -99,15 +144,22 @@ export async function getCompanyPageName(email: string) {
 
 export async function setCompanyPageName(email: string, pageName: string) {
     try {
+        // Verify ownership
+        await verifyCompanyOwnership(email)
+
+        // Validation
+        const validatedEmail = emailSchema.parse(email)
+        const validatedPageName = pageNameSchema.parse(pageName)
+
         // eslint-disable-next-line @typescript-eslint/no-unused-vars
         const company = await prisma.company.findUnique({
             where: {
-                email: email
+                email: validatedEmail
             }
         })
         await prisma.company.update({
-            where: { email },
-            data: { pageName }
+            where: { email: validatedEmail },
+            data: { pageName: validatedPageName }
         })
     } catch (error) {
         console.error(error)
@@ -117,14 +169,17 @@ export async function setCompanyPageName(email: string, pageName: string) {
 
 export async function getServicesByPageName(pageName: string) {
     try {
+        // Validation
+        const validatedPageName = pageNameSchema.parse(pageName)
+
         const company = await prisma.company.findUnique({
             where: {
-                pageName: pageName
+                pageName: validatedPageName
             }
         })
 
         if(!company) {
-            throw new Error(`Aucune entreprise trouvée avec le nom de page : ${pageName}`)
+            throw new Error(`Aucune entreprise trouvée avec le nom de page : ${validatedPageName}`)
         }
 
         const services = await prisma.service.findMany({
@@ -142,14 +197,18 @@ export async function getServicesByPageName(pageName: string) {
 
 export async function createTicket(serviceId:string , nameComplete:string , pageName:string) {
     try {
+        // Validation
+        const validatedNameComplete = customerNameSchema.parse(nameComplete)
+        const validatedPageName = pageNameSchema.parse(pageName)
+
         const company = await prisma.company.findUnique({
             where: {
-                pageName: pageName
+                pageName: validatedPageName
             }
         })
 
         if(!company) {
-            throw new Error(`Aucune entreprise trouvée avec le nom de page : ${pageName}`)
+            throw new Error(`Aucune entreprise trouvée avec le nom de page : ${validatedPageName}`)
         }
 
         const ticketNum = `A${Math.floor(Math.random() * 10000)}`
@@ -158,7 +217,7 @@ export async function createTicket(serviceId:string , nameComplete:string , page
         const ticket = await prisma.ticket.create({
             data: {
                 serviceId,
-                nameComplete,
+                nameComplete: validatedNameComplete,
                 num : ticketNum,
                 status:"PENDING"
             }
@@ -173,9 +232,15 @@ export async function createTicket(serviceId:string , nameComplete:string , page
 
 export async function getPendingTicketsByEmail(email:string) {
     try {
+        // Verify ownership
+        await verifyCompanyOwnership(email)
+
+        // Validation
+        const validatedEmail = emailSchema.parse(email)
+
       const company = await prisma.company.findUnique({
             where: {
-                email: email
+                email: validatedEmail
             },
             include: {
                 services : {
@@ -199,7 +264,7 @@ export async function getPendingTicketsByEmail(email:string) {
         })
 
         if(!company) {
-            throw new Error(`Aucune entreprise trouvée avec le nom de page : ${email}`)
+            throw new Error(`Aucune entreprise trouvée avec le nom de page : ${validatedEmail}`)
         }
         let pendingTickets = company.services.flatMap((service) =>
             service.tickets.map((Ticket) => ({
@@ -214,7 +279,7 @@ export async function getPendingTicketsByEmail(email:string) {
         )
 
         return pendingTickets
-         
+
     } catch (error) {
         console.error(error)
     }
@@ -255,9 +320,16 @@ export async function getTicketsByIds(ticketNums : any[]) {
 
 export async function createPost (email: string, postName: string) {
     try {
+        // Verify ownership
+        await verifyCompanyOwnership(email)
+
+        // Validation
+        const validatedEmail = emailSchema.parse(email)
+        const validatedPostName = postNameSchema.parse(postName)
+
         const company = await prisma.company.findUnique({
             where: {
-                email: email
+                email: validatedEmail
             }
         })
 
@@ -268,7 +340,7 @@ export async function createPost (email: string, postName: string) {
         // eslint-disable-next-line @typescript-eslint/no-unused-vars
         const newPost = await prisma.post.create({
             data: {
-                name : postName,
+                name : validatedPostName,
                 companyId : company.id
             }
         })
@@ -279,10 +351,28 @@ export async function createPost (email: string, postName: string) {
 
 export async function deletePost (postId: string) {
     try {
+        // Get authenticated user
+        const userEmail = await getCurrentUserEmail()
+        if (!userEmail) {
+            throw new Error('Authentification requise')
+        }
+
+        // Verify post belongs to user's company
+        const post = await prisma.post.findUnique({
+            where: { id: postId },
+            include: { company: true }
+        })
+
+        if (!post) {
+            throw new Error('Poste non trouvé')
+        }
+
+        if (post.company.email.toLowerCase() !== userEmail.toLowerCase()) {
+            throw new Error('Vous n\'avez pas accès à ce poste')
+        }
+
         await prisma.post.delete({
-            where: {
-                id : postId
-            }
+            where: { id: postId }
         })
     } catch (error) {
         console.error(error)
@@ -291,9 +381,15 @@ export async function deletePost (postId: string) {
 
 export async function getPostsByCompanyEmail(email: string) {
     try {
+        // Verify ownership
+        await verifyCompanyOwnership(email)
+
+        // Validation
+        const validatedEmail = emailSchema.parse(email)
+
         const company = await prisma.company.findUnique({
             where: {
-                email: email
+                email: validatedEmail
             }
         })
 
@@ -334,6 +430,12 @@ export async function getPostNameById(postId: string) {
 
 export async function getLastTicketByEmail(email: string, idPoste: string) {
     try {
+        // Verify ownership
+        await verifyCompanyOwnership(email)
+
+        // Validation
+        const validatedEmail = emailSchema.parse(email)
+
         const existingTicket = await prisma.ticket.findFirst({
             where: {
                 postId: idPoste,
@@ -355,7 +457,7 @@ export async function getLastTicketByEmail(email: string, idPoste: string) {
         const ticket = await prisma.ticket.findFirst({
             where: {
                 status: "PENDING",
-                service: { company: { email: email } }
+                service: { company: { email: validatedEmail } }
             },
             orderBy: { createdAt: "asc" },
             include: { service: true, post: true }
@@ -406,10 +508,16 @@ export async function updateTicketStatus(ticketId: string, newStatus: string) {
 
 export async function get10LstFinishedTicketsByEmail(email: string) {
     try {
+        // Verify ownership
+        await verifyCompanyOwnership(email)
+
+        // Validation
+        const validatedEmail = emailSchema.parse(email)
+
         const tickets = await prisma.ticket.findMany({
             where: {
                 status: "FINISHED",
-                service: { company: { email: email } }
+                service: { company: { email: validatedEmail } }
             },
             orderBy: { createdAt: "desc" },
             take: 10,
@@ -428,9 +536,15 @@ export async function get10LstFinishedTicketsByEmail(email: string) {
 
 export async function getTicketStatsByEmail(email: string) {
     try {
+        // Verify ownership
+        await verifyCompanyOwnership(email)
+
+        // Validation
+        const validatedEmail = emailSchema.parse(email)
+
         const tickets = await prisma.ticket.findMany({
             where: {
-                service: { company: { email: email } }
+                service: { company: { email: validatedEmail } }
             }
         })
         const totalTickets = tickets.length
@@ -452,8 +566,11 @@ export async function getTicketStatsByEmail(email: string) {
     }
 }
 
-export async function getTicketsWithContext(ticketNums: never[], pageName: string) {
+export async function getTicketsWithContext(ticketNums: string[], pageName: string) {
     try {
+        // Validation
+        const validatedPageName = pageNameSchema.parse(pageName)
+
         // 1. Récupérer les tickets du client
         const clientTickets = await prisma.ticket.findMany({
             where: {
@@ -477,12 +594,12 @@ export async function getTicketsWithContext(ticketNums: never[], pageName: strin
         // 2. Récupérer l'entreprise
         const company = await prisma.company.findUnique({
             where: {
-                pageName: pageName
+                pageName: validatedPageName
             }
         })
 
         if (!company) {
-            throw new Error(`Aucune entreprise trouvée avec le pageName: ${pageName}`)
+            throw new Error(`Aucune entreprise trouvée avec le pageName: ${validatedPageName}`)
         }
 
         // 3. Récupérer TOUS les tickets en attente de l'entreprise
