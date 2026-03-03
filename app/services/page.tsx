@@ -86,7 +86,11 @@ const page = () => {
                   onChange={(e) => setAvgTime(Number(e.target.value))}
                 />
             </label>
-            <button className='btn btn-primary btn-sm mt-4' onClick={handleCreateService}>Ajouter le service</button>
+            <button className='btn btn-primary btn-sm mt-4' onClick={handleCreateService} disabled={loading}>
+              {loading ? (
+                <><span className='loading loading-spinner loading-sm'></span>Ajout...</>
+              ) : 'Ajouter le service'}
+            </button>
         </div>
 
         <div className='mt-4 md:mt-0 md:ml-4 md:w-3/4 md:border-l border-base-200 md:pl-4 w-full'>

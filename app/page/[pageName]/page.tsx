@@ -22,9 +22,12 @@ const page = ({ params }: { params: Promise<{ pageName: string }> }) => {
   const [nameComplete, setNameComplete] = useState<string>("")
   const [ticketNums, setTicketNums] = useState<any[]>([])
   const [countdown, setCountdown] = useState<number>(5)
+  const [isLoading, setIsLoading] = useState(false)
+  const [isLoadingServices, setIsLoadingServices] = useState(true)
 
 
   const resolveParamsAndFetchServices = async () => {
+    setIsLoadingServices(true)
     try {
       const resolvedParams = await params
       setPageName(resolvedParams.pageName)
@@ -38,6 +41,8 @@ const page = ({ params }: { params: Promise<{ pageName: string }> }) => {
     } catch (error) {
       console.error(error)
       showError(error instanceof Error ? error.message : 'Erreur lors du chargement des services')
+    } finally {
+      setIsLoadingServices(false)
     }
   }
 
@@ -98,6 +103,7 @@ const page = ({ params }: { params: Promise<{ pageName: string }> }) => {
       showError("Veuillez sélectionner un service et entrer votre nom.")
       return
     }
+    setIsLoading(true)
     try {
       const ticketNum = await createTicket(selectedServiceId, nameComplete, pageName || '')
       if (ticketNum) {
@@ -115,6 +121,8 @@ const page = ({ params }: { params: Promise<{ pageName: string }> }) => {
       console.error(error)
       const errorMessage = error instanceof Error ? error.message : 'Erreur lors de la création du ticket'
       showError(errorMessage)
+    } finally {
+      setIsLoading(false)
     }
   }
 
@@ -152,11 +160,14 @@ const page = ({ params }: { params: Promise<{ pageName: string }> }) => {
 
         <form className='flex flex-col space-y-2 md:w-96' onSubmit={handleSubmit}>
           <select
-            className="select  select-bordered w-full"
+            className="select select-bordered w-full"
             onChange={(e) => setSelectedServiceId(e.target.value)}
             value={selectedServiceId || ''}
+            disabled={isLoading || isLoadingServices}
           >
-            <option disabled value="">Choisissez un service</option>
+            <option disabled value="">
+              {isLoadingServices ? '⏳ Chargement des services...' : 'Choisissez un service'}
+            </option>
             {services.map((service) => (
               <option key={service.id} value={service.id}>
                 {service.name} - ({service.avgTime} min)
@@ -169,8 +180,22 @@ const page = ({ params }: { params: Promise<{ pageName: string }> }) => {
             className='input input-bordered w-full'
             onChange={(e) => setNameComplete(e.target.value)}
             value={nameComplete}
+            disabled={isLoading}
           />
-          <button type="submit" className='btn btn-primary w-fit'>Go</button>
+          <button 
+            type="submit" 
+            className='btn btn-primary w-fit'
+            disabled={isLoading || isLoadingServices}
+          >
+            {isLoading ? (
+              <>
+                <span className='loading loading-spinner loading-sm'></span>
+                Création...
+              </>
+            ) : (
+              'Go'
+            )}
+          </button>
         </form>
 
         <div className='w-full mt-4 md:ml-4 md:mt-0'>

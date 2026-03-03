@@ -9,14 +9,17 @@ import { useUser } from '@clerk/nextjs'
 import Link from 'next/link'
 import { useRouter } from 'next/navigation'
 import React, { useEffect, useState } from 'react'
+import { useToast } from '@/lib/useToast'
 
 const page = ({ params }: { params: Promise<{ idPoste: string }> }) => {
 
     const { user } = useUser()
+    const { showError } = useToast()
     const email = user?.primaryEmailAddress?.emailAddress
     const [idPoste, setIdPoste] = useState<string | null>(null)
     const [ticket, setTicket] = useState<Ticket | null>(null)
     const [namePoste, setNamePoste] = useState<string | null>(null)
+    const [isLoading, setIsLoading] = useState(false)
     const router = useRouter()
 
     const getData = async () => {
@@ -47,6 +50,7 @@ const page = ({ params }: { params: Promise<{ idPoste: string }> }) => {
 
     const handleStatusChange = async (newStatus: string) => {
         if (ticket) {
+            setIsLoading(true)
             try {
                 await updateTicketStatus(ticket.id, newStatus)
                 if (newStatus === "FINISHED") {
@@ -54,9 +58,11 @@ const page = ({ params }: { params: Promise<{ idPoste: string }> }) => {
                 } else {
                     getData()
                 }
-
             } catch (error) {
                 console.error(error)
+                showError('Erreur lors de la mise à jour du ticket')
+            } finally {
+                setIsLoading(false)
             }
         }
     }
@@ -79,8 +85,11 @@ const page = ({ params }: { params: Promise<{ idPoste: string }> }) => {
                             <button
                                 className='btn btn-primary btn-outline btn-sm'
                                 onClick={() => handleStatusChange('IN_PROGRESS')}
+                                disabled={isLoading}
                             >
-                                Démarrer le traitement
+                                {isLoading ? (
+                                    <><span className='loading loading-spinner loading-sm'></span>Démarrage...</>
+                                ) : 'Démarrer le traitement'}
                             </button>
                         )}
 
@@ -88,8 +97,11 @@ const page = ({ params }: { params: Promise<{ idPoste: string }> }) => {
                             <button
                                 className='btn btn-warning btn-outline btn-sm'
                                 onClick={() => handleStatusChange('FINISHED')}
+                                disabled={isLoading}
                             >
-                                Fin du traitement
+                                {isLoading ? (
+                                    <><span className='loading loading-spinner loading-sm'></span>Finalisation...</>
+                                ) : 'Fin du traitement'}
                             </button>
                         )}
                     </div>

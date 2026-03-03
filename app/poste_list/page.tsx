@@ -77,7 +77,9 @@ const page = () => {
           onChange={(e) => setNewPostName(e.target.value)}
           />
           <button className='btn btn-primary btn-sm' onClick={handleCreatePost} disabled={loading}>
-            {loading ? 'Création...' : 'Créer le poste'}
+            {loading ? (
+              <><span className='loading loading-spinner loading-sm'></span>Création...</>
+            ) : 'Créer le poste'}
           </button>
         </div>
         <ul className='mt-4 md:mt-0 w-full grid md:grid-cols-3 gap-4'>

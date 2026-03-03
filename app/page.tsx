@@ -6,16 +6,19 @@ import { useEffect, useState } from "react";
 import { Ticket } from "./type";
 import EmptyState from "./components/EmptyState";
 import TicketComponent from "./components/TicketComponent";
+import { useToast } from "@/lib/useToast";
+import socket from "@/lib/socket";
 
 export default function Home() {
   const {user} = useUser()
+  const { showError } = useToast()
   const email = user?.primaryEmailAddress?.emailAddress
   const [tickets, setTickets] = useState<Ticket[]>([])
-
-  const [countdown, setCountdown] = useState<number>(5)
+  const [isLoading, setIsLoading] = useState(true)
 
   const fetchTickets = async () => {
     if(email) {
+      setIsLoading(true)
       try {
         const fetchedTickets = await getPendingTicketsByEmail(email);
         if(fetchedTickets) {
@@ -23,53 +26,58 @@ export default function Home() {
         }
       } catch (error) {
         console.error(error)
+        showError('Erreur lors de la récupération des tickets')
+      } finally {
+        setIsLoading(false)
       }
     }
   }
 
+  // WebSocket connection for real-time updates
   useEffect (() => {
-    fetchTickets()
-  // eslint-disable-next-line react-hooks/exhaustive-deps
-  } , [email])
+    if(!email) return
 
-  useEffect (() => {
-    const handleCountdownAndRefresh = () => {
-      if(countdown === 0){
-        fetchTickets()
-        setCountdown(5)
-      }else {
-        setCountdown((prevCountdown) => prevCountdown - 1)
-      }
+    // Emit login event to server
+    socket.emit('login', email)
+
+    // Listen for ticket updates from server
+    const handleTicketsUpdated = (updatedTickets: Ticket[]) => {
+      setTickets(updatedTickets)
     }
 
-    const timeoutId = setTimeout(handleCountdownAndRefresh, 1000)
+    socket.on('ticketsUpdated', handleTicketsUpdated)
 
-    return () => clearTimeout(timeoutId)
+    // Fetch initial tickets
+    fetchTickets()
+
+    // Cleanup listeners on unmount
+    return () => {
+      socket.off('ticketsUpdated', handleTicketsUpdated)
+    }
 
   // eslint-disable-next-line react-hooks/exhaustive-deps
-  } , [countdown])
+  } , [email])
 
   return (
     <Wrapper>
 
-      <div className="flex justify-between mb-4">
+      <div className="flex justify-between items-center mb-4">
         <h1 className="text-2xl font-bold">Vos tickets</h1>
-        <div className="flex items-center">
-          <span className="relative flex size-3">
-            <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-accent/30 opacity-75"></span>
-            <span className="relative inline-flex size-3 rounded-full bg-accent"></span>
-          </span>
-          <div className="ml-2">
-            ({countdown}s)
-          </div>
+        <div className="flex items-center gap-2">
+          {isLoading && (
+            <span className='loading loading-spinner loading-sm'></span>
+          )}
+          {!isLoading && (
+            <>
+              <span className="relative flex size-3">
+                <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-accent/30 opacity-75"></span>
+                <span className="relative inline-flex size-3 rounded-full bg-accent"></span>
+              </span>
+              <span className="text-sm text-base-content/70">Connecté</span>
+            </>
+          )}
         </div>
       </div>
-
-      {tickets.length === 0 ? (
-        <div>
-          <EmptyState IconComponent={'Bird'} message={'Aucun ticket en attente'} />
-        </div>
-      ) : (
         <div className="grid grid-cols-1 gap-4">
 
           {
@@ -89,7 +97,6 @@ export default function Home() {
           }
 
         </div>
-      )}
     </Wrapper>
   );
 }
