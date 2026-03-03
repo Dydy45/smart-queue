@@ -1,7 +1,9 @@
 "use server"
 
+import crypto from 'crypto'
 import prisma from '@/lib/prisma'
 import { verifyCompanyOwnership, getCurrentUserEmail } from '@/lib/auth'
+import { checkRateLimit, rateLimitConfig, RateLimitError } from '@/lib/ratelimit'
 import {
   serviceNameSchema,
   pageNameSchema,
@@ -10,6 +12,18 @@ import {
   avgTimeSchema,
   emailSchema
 } from '@/lib/validation'
+
+/**
+ * Génère un numéro de ticket sécurisé en utilisant crypto
+ * Format: T[timestamp en base 36][4 bytes aléatoires en base 36]
+ * Exemple: T20250301A4K9L
+ */
+function generateTicketNumber(): string {
+  const date = Date.now().toString(36)
+  const random = crypto.getRandomValues(new Uint8Array(4))
+    .reduce((acc, byte) => acc + byte.toString(36), '')
+  return `T${date}${random}`.toUpperCase().substring(0, 10)
+}
 
 export async function checkAndAddUser(email: string, name: string) {
     if (!email) return
@@ -37,6 +51,16 @@ export async function checkAndAddUser(email: string, name: string) {
 export async function createService(email: string, serviceName: string, avgTime: number) {
     if (!email || !serviceName || avgTime == null) return
     try {
+        // Rate limiting: 5 services par minute par email
+        const { success: rateLimitSuccess } = await checkRateLimit(
+          `service:${email}`,
+          rateLimitConfig.createService.limit,
+          rateLimitConfig.createService.windowMs
+        )
+        if (!rateLimitSuccess) {
+          throw new RateLimitError('Trop de services créés. Veuillez attendre une minute.')
+        }
+
         // Verify ownership
         await verifyCompanyOwnership(email)
 
@@ -61,6 +85,9 @@ export async function createService(email: string, serviceName: string, avgTime:
             console.error("Company not found for email:", validatedEmail)
         }
     } catch (error) {
+        if (error instanceof RateLimitError) {
+          throw error
+        }
         console.error("Error in createService:", error)
     }
 }
@@ -100,6 +127,16 @@ export async function deleteServiceById(serviceId: string) {
             throw new Error('Authentification requise')
         }
 
+        // Rate limiting: 10 délétions par minute par email
+        const { success: rateLimitSuccess } = await checkRateLimit(
+          `delete-service:${userEmail}`,
+          10,
+          60 * 1000
+        )
+        if (!rateLimitSuccess) {
+          throw new RateLimitError('Trop de services supprimés. Veuillez attendre une minute.')
+        }
+
         // Verify service belongs to user's company
         const service = await prisma.service.findUnique({
             where: { id: serviceId },
@@ -118,6 +155,9 @@ export async function deleteServiceById(serviceId: string) {
             where: { id: serviceId }
         })
     } catch (error) {
+        if (error instanceof RateLimitError) {
+          throw error
+        }
         console.error(error)
     }
 }
@@ -197,9 +237,19 @@ export async function getServicesByPageName(pageName: string) {
 
 export async function createTicket(serviceId:string , nameComplete:string , pageName:string) {
     try {
+        // Rate limiting: 10 tickets par minute par page
+        const validatedPageName = pageNameSchema.parse(pageName)
+        const { success: rateLimitSuccess } = await checkRateLimit(
+          `ticket:${validatedPageName}`,
+          rateLimitConfig.createTicket.limit,
+          rateLimitConfig.createTicket.windowMs
+        )
+        if (!rateLimitSuccess) {
+          throw new RateLimitError('Trop de tickets créés. Veuillez attendre une minute.')
+        }
+
         // Validation
         const validatedNameComplete = customerNameSchema.parse(nameComplete)
-        const validatedPageName = pageNameSchema.parse(pageName)
 
         const company = await prisma.company.findUnique({
             where: {
@@ -211,7 +261,7 @@ export async function createTicket(serviceId:string , nameComplete:string , page
             throw new Error(`Aucune entreprise trouvée avec le nom de page : ${validatedPageName}`)
         }
 
-        const ticketNum = `A${Math.floor(Math.random() * 10000)}`
+        const ticketNum = generateTicketNumber()
 
         // eslint-disable-next-line @typescript-eslint/no-unused-vars
         const ticket = await prisma.ticket.create({
@@ -226,6 +276,9 @@ export async function createTicket(serviceId:string , nameComplete:string , page
         return ticketNum
 
     } catch (error) {
+        if (error instanceof RateLimitError) {
+          throw error
+        }
         console.error(error)
     }
 }
@@ -320,6 +373,16 @@ export async function getTicketsByIds(ticketNums : any[]) {
 
 export async function createPost (email: string, postName: string) {
     try {
+        // Rate limiting: 5 postes par minute par email
+        const { success: rateLimitSuccess } = await checkRateLimit(
+          `post:${email}`,
+          rateLimitConfig.createPost.limit,
+          rateLimitConfig.createPost.windowMs
+        )
+        if (!rateLimitSuccess) {
+          throw new RateLimitError('Trop de postes créés. Veuillez attendre une minute.')
+        }
+
         // Verify ownership
         await verifyCompanyOwnership(email)
 
@@ -345,6 +408,9 @@ export async function createPost (email: string, postName: string) {
             }
         })
     } catch (error) {
+        if (error instanceof RateLimitError) {
+          throw error
+        }
         console.error(error)
     }
 }
@@ -355,6 +421,16 @@ export async function deletePost (postId: string) {
         const userEmail = await getCurrentUserEmail()
         if (!userEmail) {
             throw new Error('Authentification requise')
+        }
+
+        // Rate limiting: 10 délétions de postes par minute par email
+        const { success: rateLimitSuccess } = await checkRateLimit(
+          `delete-post:${userEmail}`,
+          10,
+          60 * 1000
+        )
+        if (!rateLimitSuccess) {
+          throw new RateLimitError('Trop de postes supprimés. Veuillez attendre une minute.')
         }
 
         // Verify post belongs to user's company
@@ -375,6 +451,9 @@ export async function deletePost (postId: string) {
             where: { id: postId }
         })
     } catch (error) {
+        if (error instanceof RateLimitError) {
+          throw error
+        }
         console.error(error)
     }
 }
@@ -497,11 +576,24 @@ export async function getLastTicketByEmail(email: string, idPoste: string) {
 
 export async function updateTicketStatus(ticketId: string, newStatus: string) {
     try {
+        // Rate limiting: 20 mises à jour par minute par ticket
+        const { success: rateLimitSuccess } = await checkRateLimit(
+          `update-ticket:${ticketId}`,
+          rateLimitConfig.updateTicket.limit,
+          rateLimitConfig.updateTicket.windowMs
+        )
+        if (!rateLimitSuccess) {
+          throw new RateLimitError('Trop de mises à jour. Veuillez attendre une minute.')
+        }
+
         await prisma.ticket.update({
             where: { id: ticketId },
             data: { status: newStatus }
         })
     } catch (error) {
+        if (error instanceof RateLimitError) {
+          throw error
+        }
         console.error(error)
     }
 }

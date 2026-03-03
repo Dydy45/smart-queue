@@ -5,12 +5,14 @@ import { createTicket, getServicesByPageName, getTicketsByIds, getTicketsWithCon
 import TicketComponent from '@/app/components/TicketComponent'
 import { Service } from '@/app/generated/prisma/client'
 import { Ticket } from '@/app/type'
+import { useToast } from '@/lib/useToast'
 
 
 // eslint-disable-next-line @typescript-eslint/no-unused-vars
 import React, { use, useEffect, useState } from 'react'
 
 const page = ({ params }: { params: Promise<{ pageName: string }> }) => {
+  const { showError, showSuccess } = useToast()
 
   const [tickets, setTickets] = useState<Ticket[]>([])
   const [allTickets, setAllTickets] = useState<Ticket[]>([])
@@ -29,9 +31,13 @@ const page = ({ params }: { params: Promise<{ pageName: string }> }) => {
       const servicesList = await getServicesByPageName(resolvedParams.pageName)
       if (servicesList) {
         setServices(servicesList)
+        showSuccess(`${servicesList.length} service(s) chargé(s) avec succès`)
+      } else {
+        showError('Aucun service trouvé pour cette page')
       }
     } catch (error) {
       console.error(error)
+      showError(error instanceof Error ? error.message : 'Erreur lors du chargement des services')
     }
   }
 
@@ -66,6 +72,7 @@ const page = ({ params }: { params: Promise<{ pageName: string }> }) => {
       if (validTickets) {
         setTickets(validTickets)
         setAllTickets(allPendingTickets)
+        showSuccess('Tickets mis à jour')
       }
 
     } catch (error) {
@@ -80,6 +87,7 @@ const page = ({ params }: { params: Promise<{ pageName: string }> }) => {
           setTickets(validTickets)
       } catch (fallbackError) {
         console.error(fallbackError)
+        showError('Erreur lors de la synchronisation des tickets')
       }
     }
   }
@@ -87,22 +95,26 @@ const page = ({ params }: { params: Promise<{ pageName: string }> }) => {
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
     if (!selectedServiceId || !nameComplete) {
-      alert("Veuillez sélectionner un service et entrer votre nom.");
+      showError("Veuillez sélectionner un service et entrer votre nom.")
       return
     }
     try {
       const ticketNum = await createTicket(selectedServiceId, nameComplete, pageName || '')
-      setSelectedServiceId(null)
-      setNameComplete("")
-      const updatedTicketNums = [...ticketNums, ticketNum];
-      setTicketNums(updatedTicketNums)
-      localStorage.setItem("ticketNums", JSON.stringify(updatedTicketNums))
-
+      if (ticketNum) {
+        setSelectedServiceId(null)
+        setNameComplete("")
+        const updatedTicketNums = [...ticketNums, ticketNum];
+        setTicketNums(updatedTicketNums)
+        localStorage.setItem("ticketNums", JSON.stringify(updatedTicketNums))
+        showSuccess(`Ticket ${ticketNum} créé avec succès!`)
+      }
       console.log(ticketNums)
       console.log(ticketNum)
 
     } catch (error) {
       console.error(error)
+      const errorMessage = error instanceof Error ? error.message : 'Erreur lors de la création du ticket'
+      showError(errorMessage)
     }
   }
 

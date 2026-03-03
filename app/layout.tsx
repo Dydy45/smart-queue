@@ -2,6 +2,8 @@ import type { Metadata } from "next";
 import { Geist, Geist_Mono } from "next/font/google";
 import "./globals.css";
 import { ClerkProvider } from "@clerk/nextjs";
+import { ToastProvider } from "@/lib/ToastProvider";
+import '@/lib/init' // Initialiser le rate limiting
 
 const geistSans = Geist({
   variable: "--font-geist-sans",
@@ -25,13 +27,15 @@ export default function RootLayout({
 }>) {
   return (
     <ClerkProvider>
-      <html lang="en" data-theme="valentine">
-        <body
-          className={`${geistSans.variable} ${geistMono.variable} antialiased`}
-        >
-          {children}
-        </body>
-      </html>
+      <ToastProvider>
+        <html lang="en" data-theme="valentine">
+          <body
+            className={`${geistSans.variable} ${geistMono.variable} antialiased`}
+          >
+            {children}
+          </body>
+        </html>
+      </ToastProvider>
     </ClerkProvider>
   );
 }

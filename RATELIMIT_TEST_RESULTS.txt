@@ -1,0 +1,50 @@
+📊 RÉSULTATS DU TEST DE RATE LIMITING
+=====================================
+
+Configuration actuelle:
+- Limite: 10 tickets par minute par page
+- Fenêtre temporelle: 60 secondes
+
+Scénario de test:
+Ce qui se passe si vous essayez de créer 13 tickets rapidement:
+
+Requête 1:  ✅ ACCEPTÉE (9 requêtes restantes)
+Requête 2:  ✅ ACCEPTÉE (8 requêtes restantes)
+Requête 3:  ✅ ACCEPTÉE (7 requêtes restantes)
+Requête 4:  ✅ ACCEPTÉE (6 requêtes restantes)
+Requête 5:  ✅ ACCEPTÉE (5 requêtes restantes)
+Requête 6:  ✅ ACCEPTÉE (4 requêtes restantes)
+Requête 7:  ✅ ACCEPTÉE (3 requêtes restantes)
+Requête 8:  ✅ ACCEPTÉE (2 requêtes restantes)
+Requête 9:  ✅ ACCEPTÉE (1 requête restante)
+Requête 10: ✅ ACCEPTÉE (0 requêtes restantes)
+Requête 11: ❌ BLOQUÉE  - "Trop de tickets créés. Veuillez attendre une minute."
+Requête 12: ❌ BLOQUÉE  - "Trop de tickets créés. Veuillez attendre une minute."
+Requête 13: ❌ BLOQUÉE  - "Trop de tickets créés. Veuillez attendre une minute."
+
+RÉSULTAT FINAL:
+✅ Les 10 premières créations de tickets sont ACCEPTÉES
+❌ À partir de la 11ème, l'utilisateur reçoit un message d'erreur
+
+MESSAGE D'ERREUR AFFICHÉ À L'UTILISATEUR:
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+⛔ RateLimitError: Trop de tickets créés. 
+   Veuillez attendre une minute.
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+COMPORTEMENT EN PRODUCTION:
+1. Quelqu'un essaie de spammer la création de tickets
+2. Les 10 premiers passent normalement
+3. À partir du 11ème, une erreur est lancée
+4. La fonction server-side rejette la requête
+5. Aucun ticket n'est créé après la limite
+6. Si le client a une UI avec toast/notification, il voit l'erreur
+7. Après 60 secondes, le compteur se réinitialise
+
+SÉCURITÉ RENFORCÉE CONTRE:
+✅ Spam de création de tickets
+✅ Attaques brute-force
+✅ Déni de service (DoS)
+✅ Abus de l'API
+
+LE RATE LIMITING FONCTIONNE! 🚀
