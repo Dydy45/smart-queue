@@ -6,7 +6,7 @@ import TicketComponent from '@/app/components/TicketComponent'
 import { Service } from '@/app/generated/prisma/client'
 import { Ticket } from '@/app/type'
 import { useToast } from '@/lib/useToast'
-
+import socket from '@/lib/socket'
 
 // eslint-disable-next-line @typescript-eslint/no-unused-vars
 import React, { use, useEffect, useState } from 'react'
@@ -21,10 +21,9 @@ const page = ({ params }: { params: Promise<{ pageName: string }> }) => {
   const [selectedServiceId, setSelectedServiceId] = useState<string | null>(null)
   const [nameComplete, setNameComplete] = useState<string>("")
   const [ticketNums, setTicketNums] = useState<any[]>([])
-  const [countdown, setCountdown] = useState<number>(5)
   const [isLoading, setIsLoading] = useState(false)
   const [isLoadingServices, setIsLoadingServices] = useState(true)
-
+  const [isConnected, setIsConnected] = useState(false)
 
   const resolveParamsAndFetchServices = async () => {
     setIsLoadingServices(true)
@@ -45,6 +44,41 @@ const page = ({ params }: { params: Promise<{ pageName: string }> }) => {
       setIsLoadingServices(false)
     }
   }
+
+  // WebSocket connection for real-time updates
+  useEffect(() => {
+    if (!pageName) return
+
+    // Join the page room with current ticket numbers
+    socket.emit('joinPage', { pageName, ticketNums })
+    setIsConnected(true)
+
+    // Listen for ticket updates from server
+    const handlePublicTicketsUpdated = (data: { clientTickets: Ticket[], allTickets: Ticket[] }) => {
+      setTickets(data.clientTickets)
+      setAllTickets(data.allTickets)
+      
+      // Update localStorage with valid ticket numbers
+      const validTicketNums = data.clientTickets.map(t => t.num)
+      localStorage.setItem('ticketNums', JSON.stringify(validTicketNums))
+      setTicketNums(validTicketNums)
+    }
+
+    socket.on('publicTicketsUpdated', handlePublicTicketsUpdated)
+
+    // Cleanup on unmount
+    return () => {
+      socket.off('publicTicketsUpdated', handlePublicTicketsUpdated)
+      setIsConnected(false)
+    }
+  }, [pageName])
+
+  // Update server when ticket numbers change (e.g., after creating a new ticket)
+  useEffect(() => {
+    if (pageName && ticketNums.length > 0) {
+      socket.emit('updateTicketNums', { pageName, ticketNums })
+    }
+  }, [ticketNums, pageName])
 
   useEffect(() => {
     resolveParamsAndFetchServices()
@@ -126,25 +160,6 @@ const page = ({ params }: { params: Promise<{ pageName: string }> }) => {
     }
   }
 
-
-  useEffect(() => {
-    const handleCountdownAndRefresh = () => {
-      if (countdown === 0) {
-        if (ticketNums.length > 0)
-          fetchTicketsByIds(ticketNums)
-        setCountdown(5)
-      } else {
-        setCountdown((prevCountdown) => prevCountdown - 1)
-      }
-    }
-    const timeoutId = setTimeout(handleCountdownAndRefresh, 1000)
-    return () => clearTimeout(timeoutId)
-  }, [countdown , ticketNums])
-
-
-
-
-
   return (
     <div className='px-5 md:px-[10%] mt-8 mb-10'>
 
@@ -200,20 +215,26 @@ const page = ({ params }: { params: Promise<{ pageName: string }> }) => {
 
         <div className='w-full mt-4 md:ml-4 md:mt-0'>
 
-
           {tickets.length !== 0 && (
 
             <div>
               <div className="flex justify-between mb-4">
                 <h1 className="text-2xl font-bold">Vos Tickets</h1>
-                <div className="flex items-center">
-                  <span className="relative flex size-3">
-                    <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-warning/30 opacity-75"></span>
-                    <span className="relative inline-flex size-3 rounded-full bg-warning"></span>
-                  </span>
-                  <div className="ml-2">
-                    ({countdown}s)
-                  </div>
+                <div className="flex items-center gap-2">
+                  {isConnected ? (
+                    <>
+                      <span className="relative flex size-3">
+                        <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-success/30 opacity-75"></span>
+                        <span className="relative inline-flex size-3 rounded-full bg-success"></span>
+                      </span>
+                      <span className="text-sm text-base-content/70">Temps réel</span>
+                    </>
+                  ) : (
+                    <>
+                      <span className="loading loading-spinner loading-sm"></span>
+                      <span className="text-sm text-base-content/70">Connexion...</span>
+                    </>
+                  )}
                 </div>
               </div>
 
