@@ -45,6 +45,18 @@ export default function RootLayout({
     <ClerkProvider>
       <ToastProvider>
         <html lang="en" data-theme="valentine">
+          <head>
+            <script
+              dangerouslySetInnerHTML={{
+                __html: `
+                  try {
+                    var t = localStorage.getItem('theme') || 'valentine';
+                    document.documentElement.setAttribute('data-theme', t);
+                  } catch(e) {}
+                `
+              }}
+            />
+          </head>
           <body
             className={`${geistSans.variable} ${geistMono.variable} antialiased`}
           >

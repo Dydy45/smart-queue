@@ -1,6 +1,6 @@
 "use client"
 import { UserButton, useUser } from '@clerk/nextjs'
-import { AudioWaveform, GlobeLock, Menu, Settings, X } from 'lucide-react'
+import { AudioWaveform, GlobeLock, Menu, Moon, Settings, Sun, X } from 'lucide-react'
 import React, { useEffect, useState } from 'react'
 import Link from 'next/link'
 import { checkAndAddUser, getCompanyPageName } from '../actions'
@@ -11,6 +11,12 @@ const Navbar = () => {
     const email = user?.primaryEmailAddress?.emailAddress
     const [menuOpen, setMenuOpen] = useState(false)
     const [pageName, setPageName] = useState<string | null>(null)
+    const [isDark, setIsDark] = useState(() => {
+        if (typeof window !== 'undefined') {
+            return localStorage.getItem('theme') === 'dark'
+        }
+        return false
+    })
 
     const navLinks = [
         { href: "/", label: "Accueil" },
@@ -26,6 +32,14 @@ const Navbar = () => {
                 <Settings className='w-4 h-4' />
             </button>
 
+            <button 
+                className="btn btn-sm btn-ghost btn-circle" 
+                onClick={() => setIsDark(!isDark)}
+                aria-label="Toggle dark mode"
+            >
+                {isDark ? <Sun className='w-4 h-4' /> : <Moon className='w-4 h-4' />}
+            </button>
+
             {navLinks.map(({ href, label }) => (
                 <Link href={href} key={href} className={`${classNames} btn-sm `}>{label}</Link>
             ))}
@@ -37,6 +51,12 @@ const Navbar = () => {
             )}
         </>
     )
+
+    useEffect(() => {
+        const html = document.documentElement
+        html.setAttribute('data-theme', isDark ? 'dark' : 'valentine')
+        localStorage.setItem('theme', isDark ? 'dark' : 'valentine')
+    }, [isDark])
 
     useEffect(() => {
         const init = async () => {
