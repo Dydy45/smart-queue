@@ -4,21 +4,16 @@ import Wrapper from "./components/Wrapper";
 import { getPendingTicketsByEmail } from "./actions";
 import { useEffect, useState } from "react";
 import { Ticket } from "./type";
-import EmptyState from "./components/EmptyState";
 import TicketComponent from "./components/TicketComponent";
-import { useToast } from "@/lib/useToast";
-import socket from "@/lib/socket";
 
 export default function Home() {
   const {user} = useUser()
-  const { showError } = useToast()
   const email = user?.primaryEmailAddress?.emailAddress
   const [tickets, setTickets] = useState<Ticket[]>([])
   const [isLoading, setIsLoading] = useState(true)
 
   const fetchTickets = async () => {
     if(email) {
-      setIsLoading(true)
       try {
         const fetchedTickets = await getPendingTicketsByEmail(email);
         if(fetchedTickets) {
@@ -26,37 +21,22 @@ export default function Home() {
         }
       } catch (error) {
         console.error(error)
-        showError('Erreur lors de la récupération des tickets')
-      } finally {
-        setIsLoading(false)
       }
     }
   }
 
-  // WebSocket connection for real-time updates
-  useEffect (() => {
-    if(!email) return
+  // Polling every 5 seconds for real-time updates
+  useEffect(() => {
+    if (!email) return
 
-    // Emit login event to server
-    socket.emit('login', email)
+    setIsLoading(true)
+    fetchTickets().finally(() => setIsLoading(false))
 
-    // Listen for ticket updates from server
-    const handleTicketsUpdated = (updatedTickets: Ticket[]) => {
-      setTickets(updatedTickets)
-    }
-
-    socket.on('ticketsUpdated', handleTicketsUpdated)
-
-    // Fetch initial tickets
-    fetchTickets()
-
-    // Cleanup listeners on unmount
-    return () => {
-      socket.off('ticketsUpdated', handleTicketsUpdated)
-    }
+    const interval = setInterval(fetchTickets, 5000)
+    return () => clearInterval(interval)
 
   // eslint-disable-next-line react-hooks/exhaustive-deps
-  } , [email])
+  }, [email])
 
   return (
     <Wrapper>

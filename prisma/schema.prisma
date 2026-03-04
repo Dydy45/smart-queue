@@ -1,13 +1,10 @@
-// This is your Prisma schema file,
-// learn more about it in the docs: https://pris.ly/d/prisma-schema
-
 generator client {
   provider = "prisma-client"
   output   = "../app/generated/prisma"
 }
 
 datasource db {
-  provider = "sqlite"
+  provider = "postgresql"
 }
 
 model Company {
@@ -16,8 +13,8 @@ model Company {
   email     String    @unique
   pageName  String?   @unique
   createdAt DateTime  @default(now())
-  services  Service[]
   posts     Post[]
+  services  Service[]
 }
 
 model Service {
@@ -33,9 +30,9 @@ model Post {
   id        String   @id @default(uuid())
   name      String
   companyId String
+  createdAt DateTime @default(now())
   company   Company  @relation(fields: [companyId], references: [id])
   tickets   Ticket[]
-  createdAt DateTime @default(now())
 }
 
 model Ticket {
@@ -45,8 +42,8 @@ model Ticket {
   nameComplete String
   status       String   @default("PENDING")
   createdAt    DateTime @default(now())
-  service      Service  @relation(fields: [serviceId], references: [id] , onDelete: Cascade) 
   postName     String?
   postId       String?
   post         Post?    @relation(fields: [postId], references: [id])
+  service      Service  @relation(fields: [serviceId], references: [id], onDelete: Cascade)
 }

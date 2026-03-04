@@ -307,10 +307,8 @@ export async function getPendingTicketsByEmail(email:string) {
                             orderBy: {
                                 createdAt: "asc"
                             },
-                            include: {
-                                post: true
-                            }
-                        }
+                            include: {}
+                        }    
                     }
                 }
             }
@@ -675,7 +673,7 @@ export async function getTicketsWithContext(ticketNums: string[], pageName: stri
             },
             include: {
                 service: true,
-                post: true
+                // post: true
             }
         })
 

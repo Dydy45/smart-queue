@@ -1,12 +1,15 @@
+require('dotenv').config()
+
 const http = require('http')
 const { Server } = require('socket.io')
 const { PrismaClient } = require('./app/generated/prisma/client.js')
-const { PrismaBetterSqlite3 } = require('@prisma/adapter-better-sqlite3')
+const { PrismaPg } = require('@prisma/adapter-pg')
+const { Pool } = require('pg')
 
-// Initialize Prisma Client with BetterSqlite3 adapter
-const adapter = new PrismaBetterSqlite3({
-  url: process.env.DATABASE_URL || 'file:./dev.db',
-})
+// Initialize Prisma Client with PostgreSQL adapter
+const databaseUrl = process.env.DATABASE_URL || 'postgresql://postgres:password@localhost:5432/smartqueue'
+const pool = new Pool({ connectionString: databaseUrl })
+const adapter = new PrismaPg(pool)
 const prismaClient = new PrismaClient({ adapter })
 
 const server = http.createServer()
@@ -96,7 +99,7 @@ setInterval(async () => {
             company: true,
           },
         },
-        post: true,
+        // post: true,
       },
     })
 
@@ -132,7 +135,7 @@ setInterval(async () => {
         const lastHash = lastTicketStates.get(email)
 
         if (ticketHash !== lastHash) {
-          io.to(socketId).emit('ticketsUpdated', tickets)
+          io.to(socketId).emit('ticketsUpdated', tickets.map(t => ({ ...t, serviceName: t.service.name, avgTime: t.service.avgTime })))
           lastTicketStates.set(email, ticketHash)
         }
       }

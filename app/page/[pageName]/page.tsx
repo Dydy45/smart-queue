@@ -6,10 +6,9 @@ import TicketComponent from '@/app/components/TicketComponent'
 import { Service } from '@/app/generated/prisma/client'
 import { Ticket } from '@/app/type'
 import { useToast } from '@/lib/useToast'
-import socket from '@/lib/socket'
 
 // eslint-disable-next-line @typescript-eslint/no-unused-vars
-import React, { use, useEffect, useState } from 'react'
+import React, { use, useEffect, useRef, useState } from 'react'
 
 const page = ({ params }: { params: Promise<{ pageName: string }> }) => {
   const { showError, showSuccess } = useToast()
@@ -23,7 +22,6 @@ const page = ({ params }: { params: Promise<{ pageName: string }> }) => {
   const [ticketNums, setTicketNums] = useState<any[]>([])
   const [isLoading, setIsLoading] = useState(false)
   const [isLoadingServices, setIsLoadingServices] = useState(true)
-  const [isConnected, setIsConnected] = useState(false)
 
   const resolveParamsAndFetchServices = async () => {
     setIsLoadingServices(true)
@@ -45,40 +43,23 @@ const page = ({ params }: { params: Promise<{ pageName: string }> }) => {
     }
   }
 
-  // WebSocket connection for real-time updates
+  // Keep ref in sync with current ticketNums for use in polling interval
+  const ticketNumsRef = useRef<any[]>([])
+  useEffect(() => {
+    ticketNumsRef.current = ticketNums
+  }, [ticketNums])
+
+  // Poll every 5 seconds for real-time ticket status updates
   useEffect(() => {
     if (!pageName) return
-
-    // Join the page room with current ticket numbers
-    socket.emit('joinPage', { pageName, ticketNums })
-    setIsConnected(true)
-
-    // Listen for ticket updates from server
-    const handlePublicTicketsUpdated = (data: { clientTickets: Ticket[], allTickets: Ticket[] }) => {
-      setTickets(data.clientTickets)
-      setAllTickets(data.allTickets)
-      
-      // Update localStorage with valid ticket numbers
-      const validTicketNums = data.clientTickets.map(t => t.num)
-      localStorage.setItem('ticketNums', JSON.stringify(validTicketNums))
-      setTicketNums(validTicketNums)
-    }
-
-    socket.on('publicTicketsUpdated', handlePublicTicketsUpdated)
-
-    // Cleanup on unmount
-    return () => {
-      socket.off('publicTicketsUpdated', handlePublicTicketsUpdated)
-      setIsConnected(false)
-    }
+    const interval = setInterval(() => {
+      if (ticketNumsRef.current.length > 0) {
+        fetchTicketsByIds(ticketNumsRef.current)
+      }
+    }, 5000)
+    return () => clearInterval(interval)
+  // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [pageName])
-
-  // Update server when ticket numbers change (e.g., after creating a new ticket)
-  useEffect(() => {
-    if (pageName && ticketNums.length > 0) {
-      socket.emit('updateTicketNums', { pageName, ticketNums })
-    }
-  }, [ticketNums, pageName])
 
   useEffect(() => {
     resolveParamsAndFetchServices()
@@ -111,7 +92,6 @@ const page = ({ params }: { params: Promise<{ pageName: string }> }) => {
       if (validTickets) {
         setTickets(validTickets)
         setAllTickets(allPendingTickets)
-        showSuccess('Tickets mis à jour')
       }
 
     } catch (error) {
@@ -147,9 +127,9 @@ const page = ({ params }: { params: Promise<{ pageName: string }> }) => {
         setTicketNums(updatedTicketNums)
         localStorage.setItem("ticketNums", JSON.stringify(updatedTicketNums))
         showSuccess(`Ticket ${ticketNum} créé avec succès!`)
+        // Fetch the newly created ticket to display it immediately
+        await fetchTicketsByIds(updatedTicketNums)
       }
-      console.log(ticketNums)
-      console.log(ticketNum)
 
     } catch (error) {
       console.error(error)
@@ -221,20 +201,11 @@ const page = ({ params }: { params: Promise<{ pageName: string }> }) => {
               <div className="flex justify-between mb-4">
                 <h1 className="text-2xl font-bold">Vos Tickets</h1>
                 <div className="flex items-center gap-2">
-                  {isConnected ? (
-                    <>
-                      <span className="relative flex size-3">
-                        <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-success/30 opacity-75"></span>
-                        <span className="relative inline-flex size-3 rounded-full bg-success"></span>
-                      </span>
-                      <span className="text-sm text-base-content/70">Temps réel</span>
-                    </>
-                  ) : (
-                    <>
-                      <span className="loading loading-spinner loading-sm"></span>
-                      <span className="text-sm text-base-content/70">Connexion...</span>
-                    </>
-                  )}
+                  <span className="relative flex size-3">
+                    <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-accent/30 opacity-75"></span>
+                    <span className="relative inline-flex size-3 rounded-full bg-accent"></span>
+                  </span>
+                  <span className="text-sm text-base-content/70">Auto-actualisation</span>
                 </div>
               </div>
 
@@ -273,3 +244,4 @@ const page = ({ params }: { params: Promise<{ pageName: string }> }) => {
 }
 
 export default page
+
