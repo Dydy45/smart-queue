@@ -78,6 +78,32 @@ export const rateLimitConfig = {
   callTicket: {
     limit: 15,
     windowMs: 60 * 1000 // 1 minute
+  },
+
+  // Gestion du staff: 10 par minute par email
+  addStaff: {
+    limit: 10,
+    windowMs: 60 * 1000 // 1 minute
+  },
+
+  updateStaff: {
+    limit: 20,
+    windowMs: 60 * 1000 // 1 minute
+  },
+
+  removeStaff: {
+    limit: 10,
+    windowMs: 60 * 1000 // 1 minute
+  },
+
+  assignPost: {
+    limit: 20,
+    windowMs: 60 * 1000 // 1 minute
+  },
+
+  unassignPost: {
+    limit: 20,
+    windowMs: 60 * 1000 // 1 minute
   }
 }
 

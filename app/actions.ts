@@ -741,3 +741,320 @@ export async function getTicketsWithContext(ticketNums: string[], pageName: stri
         }
     }
 }
+
+// ============================================
+// STAFF MANAGEMENT
+// ============================================
+
+/**
+ * Ajoute un employé à une entreprise
+ */
+export async function addStaff(email: string, staffEmail: string, staffName: string, role: 'ADMIN' | 'STAFF' = 'STAFF') {
+    try {
+        // Vérifier que l'utilisateur actuel est propriétaire de l'entreprise
+        await verifyCompanyOwnership(email)
+
+        // Validation des entrées
+        const validatedEmail = emailSchema.parse(email)
+        const validatedStaffEmail = emailSchema.parse(staffEmail)
+        const validatedStaffName = customerNameSchema.parse(staffName)
+
+        // Rate limiting
+        const rlConfig = rateLimitConfig.addStaff
+        await checkRateLimit(validatedEmail, rlConfig.limit, rlConfig.windowMs)
+
+        // Récupérer l'entreprise
+        const company = await prisma.company.findUnique({
+            where: { email: validatedEmail }
+        })
+
+        if (!company) {
+            throw new Error('Entreprise non trouvée')
+        }
+
+        // Vérifier si le staff existe déjà
+        const existingStaff = await prisma.staff.findUnique({
+            where: {
+                email_companyId: {
+                    email: validatedStaffEmail,
+                    companyId: company.id
+                }
+            }
+        })
+
+        if (existingStaff) {
+            throw new Error('Cet employé existe déjà dans votre entreprise')
+        }
+
+        // Créer le staff
+        const staff = await prisma.staff.create({
+            data: {
+                email: validatedStaffEmail,
+                name: validatedStaffName,
+                role,
+                companyId: company.id
+            }
+        })
+
+        return staff
+    } catch (error) {
+        if (error instanceof RateLimitError) {
+            throw error
+        }
+        console.error('Error in addStaff:', error)
+        throw error
+    }
+}
+
+/**
+ * Récupère tous les employés d'une entreprise
+ */
+export async function getStaffByCompany(email: string) {
+    try {
+        await verifyCompanyOwnership(email)
+        const validatedEmail = emailSchema.parse(email)
+
+        const company = await prisma.company.findUnique({
+            where: { email: validatedEmail },
+            include: {
+                staff: {
+                    orderBy: { createdAt: 'desc' }
+                }
+            }
+        })
+
+        return company?.staff ?? []
+    } catch (error) {
+        console.error('Error in getStaffByCompany:', error)
+        return []
+    }
+}
+
+/**
+ * Met à jour le rôle d'un employé
+ */
+export async function updateStaffRole(email: string, staffId: string, newRole: 'ADMIN' | 'STAFF') {
+    try {
+        await verifyCompanyOwnership(email)
+        const validatedEmail = emailSchema.parse(email)
+
+        // Rate limiting
+        const rlConfig = rateLimitConfig.updateStaff
+        await checkRateLimit(validatedEmail, rlConfig.limit, rlConfig.windowMs)
+
+        // Vérifier que le staff appartient à l'entreprise
+        const company = await prisma.company.findUnique({
+            where: { email: validatedEmail }
+        })
+
+        if (!company) {
+            throw new Error('Entreprise non trouvée')
+        }
+
+        const staff = await prisma.staff.findUnique({
+            where: { id: staffId }
+        })
+
+        if (!staff || staff.companyId !== company.id) {
+            throw new Error('Employé non trouvé ou non autorisé')
+        }
+
+        // Mettre à jour le rôle
+        const updatedStaff = await prisma.staff.update({
+            where: { id: staffId },
+            data: { role: newRole }
+        })
+
+        return updatedStaff
+    } catch (error) {
+        if (error instanceof RateLimitError) {
+            throw error
+        }
+        console.error('Error in updateStaffRole:', error)
+        throw error
+    }
+}
+
+/**
+ * Supprime un employé
+ */
+export async function removeStaff(email: string, staffId: string) {
+    try {
+        await verifyCompanyOwnership(email)
+        const validatedEmail = emailSchema.parse(email)
+
+        // Rate limiting
+        const rlConfig = rateLimitConfig.removeStaff
+        await checkRateLimit(validatedEmail, rlConfig.limit, rlConfig.windowMs)
+
+        // Vérifier que le staff appartient à l'entreprise
+        const company = await prisma.company.findUnique({
+            where: { email: validatedEmail }
+        })
+
+        if (!company) {
+            throw new Error('Entreprise non trouvée')
+        }
+
+        const staff = await prisma.staff.findUnique({
+            where: { id: staffId }
+        })
+
+        if (!staff || staff.companyId !== company.id) {
+            throw new Error('Employé non trouvé ou non autorisé')
+        }
+
+        // Supprimer le staff
+        await prisma.staff.delete({
+            where: { id: staffId }
+        })
+
+        return { success: true }
+    } catch (error) {
+        if (error instanceof RateLimitError) {
+            throw error
+        }
+        console.error('Error in removeStaff:', error)
+        throw error
+    }
+}
+
+/**
+ * Assigne un poste à un employé
+ */
+export async function assignPostToStaff(email: string, staffId: string, postId: string) {
+    try {
+        await verifyCompanyOwnership(email)
+        const validatedEmail = emailSchema.parse(email)
+
+        // Rate limiting
+        const rlConfig = rateLimitConfig.assignPost
+        await checkRateLimit(validatedEmail, rlConfig.limit, rlConfig.windowMs)
+
+        // Vérifier que le staff et le post appartiennent à l'entreprise
+        const company = await prisma.company.findUnique({
+            where: { email: validatedEmail }
+        })
+
+        if (!company) {
+            throw new Error('Entreprise non trouvée')
+        }
+
+        const staff = await prisma.staff.findUnique({
+            where: { id: staffId }
+        })
+
+        const post = await prisma.post.findUnique({
+            where: { id: postId }
+        })
+
+        if (!staff || staff.companyId !== company.id) {
+            throw new Error('Employé non trouvé ou non autorisé')
+        }
+
+        if (!post || post.companyId !== company.id) {
+            throw new Error('Poste non trouvé ou non autorisé')
+        }
+
+        // Assigner le poste
+        await prisma.staff.update({
+            where: { id: staffId },
+            data: {
+                assignedPosts: {
+                    connect: { id: postId }
+                }
+            }
+        })
+
+        return { success: true }
+    } catch (error) {
+        if (error instanceof RateLimitError) {
+            throw error
+        }
+        console.error('Error in assignPostToStaff:', error)
+        throw error
+    }
+}
+
+/**
+ * Retire un poste assigné à un employé
+ */
+export async function unassignPostFromStaff(email: string, staffId: string, postId: string) {
+    try {
+        await verifyCompanyOwnership(email)
+        const validatedEmail = emailSchema.parse(email)
+
+        // Rate limiting
+        const rlConfig = rateLimitConfig.unassignPost
+        await checkRateLimit(validatedEmail, rlConfig.limit, rlConfig.windowMs)
+
+        // Vérifier que le staff appartient à l'entreprise
+        const company = await prisma.company.findUnique({
+            where: { email: validatedEmail }
+        })
+
+        if (!company) {
+            throw new Error('Entreprise non trouvée')
+        }
+
+        const staff = await prisma.staff.findUnique({
+            where: { id: staffId }
+        })
+
+        if (!staff || staff.companyId !== company.id) {
+            throw new Error('Employé non trouvé ou non autorisé')
+        }
+
+        // Retirer le poste
+        await prisma.staff.update({
+            where: { id: staffId },
+            data: {
+                assignedPosts: {
+                    disconnect: { id: postId }
+                }
+            }
+        })
+
+        return { success: true }
+    } catch (error) {
+        if (error instanceof RateLimitError) {
+            throw error
+        }
+        console.error('Error in unassignPostFromStaff:', error)
+        throw error
+    }
+}
+
+/**
+ * Récupère les postes assignés à un employé
+ */
+export async function getAssignedPosts(email: string, staffId: string) {
+    try {
+        await verifyCompanyOwnership(email)
+        const validatedEmail = emailSchema.parse(email)
+
+        const company = await prisma.company.findUnique({
+            where: { email: validatedEmail }
+        })
+
+        if (!company) {
+            throw new Error('Entreprise non trouvée')
+        }
+
+        const staff = await prisma.staff.findUnique({
+            where: { id: staffId },
+            include: {
+                assignedPosts: true
+            }
+        })
+
+        if (!staff || staff.companyId !== company.id) {
+            throw new Error('Employé non trouvé ou non autorisé')
+        }
+
+        return staff.assignedPosts
+    } catch (error) {
+        console.error('Error in getAssignedPosts:', error)
+        return []
+    }
+}

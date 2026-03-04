@@ -15,6 +15,7 @@ model Company {
   createdAt DateTime  @default(now())
   posts     Post[]
   services  Service[]
+  staff     Staff[]
 }
 
 model Service {
@@ -27,12 +28,13 @@ model Service {
 }
 
 model Post {
-  id        String   @id @default(uuid())
-  name      String
-  companyId String
-  createdAt DateTime @default(now())
-  company   Company  @relation(fields: [companyId], references: [id])
-  tickets   Ticket[]
+  id            String   @id @default(uuid())
+  name          String
+  companyId     String
+  createdAt     DateTime @default(now())
+  company       Company  @relation(fields: [companyId], references: [id])
+  tickets       Ticket[]
+  assignedStaff Staff[]
 }
 
 model Ticket {
@@ -46,4 +48,22 @@ model Ticket {
   postId       String?
   post         Post?    @relation(fields: [postId], references: [id])
   service      Service  @relation(fields: [serviceId], references: [id], onDelete: Cascade)
+}
+
+enum Role {
+  ADMIN
+  STAFF
+}
+
+model Staff {
+  id            String   @id @default(uuid())
+  email         String
+  name          String
+  role          Role     @default(STAFF)
+  companyId     String
+  createdAt     DateTime @default(now())
+  company       Company  @relation(fields: [companyId], references: [id], onDelete: Cascade)
+  assignedPosts Post[]
+
+  @@unique([email, companyId])
 }

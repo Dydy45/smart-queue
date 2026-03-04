@@ -22,6 +22,7 @@ const Navbar = () => {
         { href: "/", label: "Accueil" },
         { href: "/services", label: "Vos services" },
         { href: "/poste_list", label: "Vos postes" },
+        { href: "/staff", label: "Gestion Staff" },
         { href: "/dashboard", label: "Tableau de bord" }
     ]
 
