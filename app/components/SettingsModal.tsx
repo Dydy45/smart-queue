@@ -31,7 +31,7 @@ const SettingsModal: React.FC<SettingsModalProps> = ({email, pageName, onPageNam
         <div className="modal-box">
             <form method="dialog">
                 {/* if there is a button in form, it will close the modal */}
-                <button className="btn btn-sm btn-circle btn-ghost absolute right-2 top-2">✕</button>
+                <button className="btn btn-sm btn-circle btn-ghost absolute right-2 top-2" aria-label="Fermer les paramètres">✕</button>
             </form>
             <h3 className="font-bold text-lg">Paramètres</h3>
             <label className='form-control w-full'>
@@ -50,6 +50,7 @@ const SettingsModal: React.FC<SettingsModalProps> = ({email, pageName, onPageNam
                                 value={newPageName}
                                 onChange={(e) => setNewPageName(e.target.value)}
                                 disabled={loading}
+                                aria-label="Nom de votre page"
                             />
                             <button
                                 className='btn btn-sm w-fit btn-primary'

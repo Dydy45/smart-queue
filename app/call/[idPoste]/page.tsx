@@ -86,9 +86,10 @@ const page = ({ params }: { params: Promise<{ idPoste: string }> }) => {
                                 className='btn btn-primary btn-outline btn-sm'
                                 onClick={() => handleStatusChange('IN_PROGRESS')}
                                 disabled={isLoading}
+                                aria-label="Démarrer le traitement du ticket"
                             >
                                 {isLoading ? (
-                                    <><span className='loading loading-spinner loading-sm'></span>Démarrage...</>
+                                    <><span className='loading loading-spinner loading-sm' role="status" aria-label="Chargement"></span>Démarrage...</>
                                 ) : 'Démarrer le traitement'}
                             </button>
                         )}
@@ -98,9 +99,10 @@ const page = ({ params }: { params: Promise<{ idPoste: string }> }) => {
                                 className='btn btn-warning btn-outline btn-sm'
                                 onClick={() => handleStatusChange('FINISHED')}
                                 disabled={isLoading}
+                                aria-label="Terminer le traitement du ticket"
                             >
                                 {isLoading ? (
-                                    <><span className='loading loading-spinner loading-sm'></span>Finalisation...</>
+                                    <><span className='loading loading-spinner loading-sm' role="status" aria-label="Chargement"></span>Finalisation...</>
                                 ) : 'Fin du traitement'}
                             </button>
                         )}

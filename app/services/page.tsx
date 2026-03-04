@@ -72,7 +72,7 @@ const page = () => {
 
             <span className='label-text'>Nom Du Service</span>
             <div>
-                <input type="text" name="" placeholder='Nom du service' className='input input-bordered input-sm w-full' value={serviceName} onChange={(e) => setServiceName(e.target.value)} />
+                <input type="text" name="" placeholder='Nom du service' className='input input-bordered input-sm w-full' value={serviceName} onChange={(e) => setServiceName(e.target.value)} aria-label="Nom du service" />
             </div>
 
             <span className='label-text'>Temps Moyen (en minutes)</span>
@@ -84,11 +84,12 @@ const page = () => {
                   placeholder="20min"
                   value={avgTime}
                   onChange={(e) => setAvgTime(Number(e.target.value))}
+                  aria-label="Temps moyen en minutes"
                 />
             </label>
             <button className='btn btn-primary btn-sm mt-4' onClick={handleCreateService} disabled={loading}>
               {loading ? (
-                <><span className='loading loading-spinner loading-sm'></span>Ajout...</>
+                <><span className='loading loading-spinner loading-sm' role="status" aria-label="Chargement"></span>Ajout...</>
               ) : 'Ajouter le service'}
             </button>
         </div>
@@ -98,7 +99,7 @@ const page = () => {
 
           {loading ? (
             <div className='flex justify-center items-center w-full'>
-              <span className="loading loading-spinner loading-xs"></span>
+              <span className="loading loading-spinner loading-xs" role="status" aria-label="Chargement des services"></span>
             </div>
           ) : services.length === 0 ?  (
             <div>
@@ -124,9 +125,9 @@ const page = () => {
                       <td className='flex items-center'> <Clock2 className="w-4 h-4 inline mr-2" />{service.avgTime} min</td>
                       <td>
                         <button
-                        
-                         className='btn btn-xs btn-error'
-                         onClick={() => handleDeleteService(service.id)}
+                          className='btn btn-xs btn-error'
+                          onClick={() => handleDeleteService(service.id)}
+                          aria-label={`Supprimer le service ${service.name}`}
                         >
                           <Trash className="w-4 h-4" />
                         </button>

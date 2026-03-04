@@ -159,6 +159,7 @@ const page = ({ params }: { params: Promise<{ pageName: string }> }) => {
             onChange={(e) => setSelectedServiceId(e.target.value)}
             value={selectedServiceId || ''}
             disabled={isLoading || isLoadingServices}
+            aria-label="Choisir un service"
           >
             <option disabled value="">
               {isLoadingServices ? '⏳ Chargement des services...' : 'Choisissez un service'}
@@ -176,6 +177,7 @@ const page = ({ params }: { params: Promise<{ pageName: string }> }) => {
             onChange={(e) => setNameComplete(e.target.value)}
             value={nameComplete}
             disabled={isLoading}
+            aria-label="Votre nom"
           />
           <button 
             type="submit" 
@@ -184,7 +186,7 @@ const page = ({ params }: { params: Promise<{ pageName: string }> }) => {
           >
             {isLoading ? (
               <>
-                <span className='loading loading-spinner loading-sm'></span>
+                <span className='loading loading-spinner loading-sm' role="status" aria-label="Chargement"></span>
                 Création...
               </>
             ) : (

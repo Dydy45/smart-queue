@@ -75,10 +75,11 @@ const page = () => {
           className='input input-bordered input-sm w-full'
           value={newPostName}
           onChange={(e) => setNewPostName(e.target.value)}
+          aria-label="Nom du poste"
           />
           <button className='btn btn-primary btn-sm' onClick={handleCreatePost} disabled={loading}>
             {loading ? (
-              <><span className='loading loading-spinner loading-sm'></span>Création...</>
+              <><span className='loading loading-spinner loading-sm' role="status" aria-label="Chargement"></span>Création...</>
             ) : 'Créer le poste'}
           </button>
         </div>
@@ -93,7 +94,7 @@ const page = () => {
                   <Link href={`/poste/${post.id}`} className='btn btn-sm btn-primary'>
                     Traiter des tickets
                   </Link>
-                  <button className='btn btn-sm btn-primary btn-outline ml-2' onClick={() => handleDeletePost(post.id)}>
+                  <button className='btn btn-sm btn-primary btn-outline ml-2' onClick={() => handleDeletePost(post.id)} aria-label={`Supprimer le poste ${post.name}`}>
                     <Trash className='w-4 h-4' />
                   </button>
                 </div>

@@ -28,7 +28,9 @@ const Navbar = () => {
     const renderLinks = (classNames: string) => (
         <>
             <button className="btn btn-sm btn-primary btn-circle"
-                onClick={() => (document.getElementById('my_modal_3') as HTMLDialogElement).showModal()}>
+                onClick={() => (document.getElementById('my_modal_3') as HTMLDialogElement).showModal()}
+                aria-label="Ouvrir les paramètres"
+            >
                 <Settings className='w-4 h-4' />
             </button>
 
@@ -84,7 +86,7 @@ const Navbar = () => {
                     </span>
                 </div>
 
-                <button className=' btn w-fit btn-sm sm:hidden' onClick={() => setMenuOpen(!menuOpen)}>
+                <button className=' btn w-fit btn-sm sm:hidden' onClick={() => setMenuOpen(!menuOpen)} aria-label="Ouvrir le menu" aria-expanded={menuOpen}>
                     <Menu className='w-4' />
                 </button>
 
@@ -97,7 +99,7 @@ const Navbar = () => {
             <div className={`absolute top-0 w-full bg-base-100  h-screen flex flex-col gap-2 p-4 transition-all duration-300 sm:hidden z-50 ${menuOpen ? "left-0" : "-left-full"}`}>
                 <div className=' flex justify-between'>
                     <UserButton />
-                    <button className=' btn w-fit btn-sm sm:hidden' onClick={() => setMenuOpen(!menuOpen)}>
+                    <button className=' btn w-fit btn-sm sm:hidden' onClick={() => setMenuOpen(!menuOpen)} aria-label="Fermer le menu">
                         <X className='w-4' />
                     </button>
                 </div>

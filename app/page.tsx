@@ -45,7 +45,7 @@ export default function Home() {
         <h1 className="text-2xl font-bold">Vos tickets</h1>
         <div className="flex items-center gap-2">
           {isLoading && (
-            <span className='loading loading-spinner loading-sm'></span>
+            <span className='loading loading-spinner loading-sm' role="status" aria-label="Chargement des tickets"></span>
           )}
           {!isLoading && (
             <>
