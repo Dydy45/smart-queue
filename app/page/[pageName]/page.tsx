@@ -8,7 +8,7 @@ import { Ticket } from '@/app/type'
 import { useToast } from '@/lib/useToast'
 
 // eslint-disable-next-line @typescript-eslint/no-unused-vars
-import React, { use, useEffect, useRef, useState } from 'react'
+import React, { use, useEffect, useMemo, useRef, useState } from 'react'
 
 const page = ({ params }: { params: Promise<{ pageName: string }> }) => {
   const { showError, showSuccess } = useToast()
@@ -22,6 +22,14 @@ const page = ({ params }: { params: Promise<{ pageName: string }> }) => {
   const [ticketNums, setTicketNums] = useState<any[]>([])
   const [isLoading, setIsLoading] = useState(false)
   const [isLoadingServices, setIsLoadingServices] = useState(true)
+  const [currentPage, setCurrentPage] = useState(1)
+  const TICKETS_PER_PAGE = 5
+
+  const totalPages = Math.ceil(tickets.length / TICKETS_PER_PAGE)
+  const paginatedTickets = useMemo(() =>
+    tickets.slice((currentPage - 1) * TICKETS_PER_PAGE, currentPage * TICKETS_PER_PAGE),
+    [tickets, currentPage]
+  )
 
   const resolveParamsAndFetchServices = async () => {
     setIsLoadingServices(true)
@@ -213,15 +221,14 @@ const page = ({ params }: { params: Promise<{ pageName: string }> }) => {
 
               <div className="grid grid-cols-1 gap-4">
 
-                {tickets.map((ticket, index) => {
-                  // Utiliser allTickets pour calculer le temps d'attente correct
-                  // en tenant compte de TOUS les tickets en attente, pas seulement ceux du client
+                {paginatedTickets.map((ticket) => {
+                  const actualIndex = tickets.findIndex(t => t.id === ticket.id)
                   const totalWaitTime = allTickets && allTickets.length > 0
                     ? allTickets
                         .filter(t => t.createdAt < ticket.createdAt && t.serviceId === ticket.serviceId)
                         .reduce((acc, prevTicket) => acc + prevTicket.avgTime, 0)
                     : tickets
-                        .slice(0, index)
+                        .slice(0, actualIndex)
                         .reduce((acc, prevTicket) => acc + prevTicket.avgTime, 0)
 
                   return (
@@ -229,12 +236,36 @@ const page = ({ params }: { params: Promise<{ pageName: string }> }) => {
                       key={ticket.id}
                       ticket={ticket}
                       totalWaitTime={totalWaitTime}
-                      index={index}
+                      index={actualIndex}
                     />
                   )
                 })}
 
               </div>
+
+              {totalPages > 1 && (
+                <div className="flex justify-center items-center gap-3 mt-4">
+                  <button
+                    className="btn btn-sm btn-ghost"
+                    onClick={() => setCurrentPage(p => p - 1)}
+                    disabled={currentPage === 1}
+                    aria-label="Page précédente"
+                  >
+                    ←
+                  </button>
+                  <span className="text-sm text-base-content/70">
+                    Page {currentPage} sur {totalPages}
+                  </span>
+                  <button
+                    className="btn btn-sm btn-ghost"
+                    onClick={() => setCurrentPage(p => p + 1)}
+                    disabled={currentPage === totalPages}
+                    aria-label="Page suivante"
+                  >
+                    →
+                  </button>
+                </div>
+              )}
             </div>
           )}
         </div>
