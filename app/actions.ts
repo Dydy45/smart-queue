@@ -866,9 +866,7 @@ export async function getTicketsWithContext(ticketNums: string[], pageName: stri
     }
 }
 
-// ============================================
 // STAFF MANAGEMENT
-// ============================================
 
 /**
  * Ajoute un employé à une entreprise
