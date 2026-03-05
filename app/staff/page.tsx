@@ -3,9 +3,9 @@
 import React, { useEffect, useState } from 'react'
 import Wrapper from '../components/Wrapper'
 import { useUser } from '@clerk/nextjs'
-import { addStaff, getStaffByCompany, updateStaffRole, removeStaff } from '../actions'
-import { Staff } from '../generated/prisma/client'
-import { Trash, UserPlus } from 'lucide-react'
+import { addStaff, getStaffByCompany, updateStaffRole, removeStaff, getPostsByCompanyEmail, assignPostToStaff, unassignPostFromStaff, getAssignedPosts } from '../actions'
+import { Staff, Post } from '../generated/prisma/client'
+import { Trash, UserPlus, X } from 'lucide-react'
 import EmptyState from '../components/EmptyState'
 import { useToast } from '@/lib/useToast'
 
@@ -15,10 +15,13 @@ const page = () => {
   const { showError, showSuccess } = useToast()
 
   const [staffList, setStaffList] = useState<Staff[]>([])
+  const [posts, setPosts] = useState<Post[]>([])
+  const [assignedPostsMap, setAssignedPostsMap] = useState<Record<string, Post[]>>({})
   const [loading, setLoading] = useState<boolean>(false)
   const [staffEmail, setStaffEmail] = useState('')
   const [staffName, setStaffName] = useState('')
   const [staffRole, setStaffRole] = useState<'ADMIN' | 'STAFF'>('STAFF')
+  const [selectedStaffId, setSelectedStaffId] = useState<string | null>(null)
 
   const fetchStaff = async () => {
     setLoading(true)
@@ -27,6 +30,10 @@ const page = () => {
         const data = await getStaffByCompany(email)
         if (data) {
           setStaffList(data)
+          // Charger les postes assignés pour chaque staff
+          for (const staff of data) {
+            await fetchAssignedPosts(staff.id)
+          }
         }
       }
     } catch (error) {
@@ -37,8 +44,35 @@ const page = () => {
     }
   }
 
+  const fetchPosts = async () => {
+    try {
+      if (email) {
+        const data = await getPostsByCompanyEmail(email)
+        if (data) {
+          setPosts(data)
+        }
+      }
+    } catch (error) {
+      console.error('Error fetching posts:', error)
+    }
+  }
+
+  const fetchAssignedPosts = async (staffId: string) => {
+    try {
+      if (email) {
+        const data = await getAssignedPosts(email, staffId)
+        if (data) {
+          setAssignedPostsMap(prev => ({ ...prev, [staffId]: data }))
+        }
+      }
+    } catch (error) {
+      console.error('Error fetching assigned posts:', error)
+    }
+  }
+
   useEffect(() => {
     fetchStaff()
+    fetchPosts()
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [email])
 
@@ -88,6 +122,32 @@ const page = () => {
     } catch (error) {
       console.error('Error removing staff:', error)
       showError('Erreur lors de la suppression de l\'employé')
+    }
+  }
+
+  const handleAssignPost = async (staffId: string, postId: string) => {
+    if (!email) return
+
+    try {
+      await assignPostToStaff(email, staffId, postId)
+      showSuccess('Poste assigné avec succès')
+      await fetchAssignedPosts(staffId)
+    } catch (error) {
+      console.error('Error assigning post:', error)
+      showError('Erreur lors de l\'assignation du poste')
+    }
+  }
+
+  const handleUnassignPost = async (staffId: string, postId: string) => {
+    if (!email) return
+
+    try {
+      await unassignPostFromStaff(email, staffId, postId)
+      showSuccess('Poste désassigné avec succès')
+      await fetchAssignedPosts(staffId)
+    } catch (error) {
+      console.error('Error unassigning post:', error)
+      showError('Erreur lors de la désassignation du poste')
     }
   }
 
@@ -181,31 +241,96 @@ const page = () => {
                 </thead>
                 <tbody>
                   {staffList.map((staff, index) => (
-                    <tr key={staff.id}>
-                      <th>{index + 1}</th>
-                      <td>{staff.name}</td>
-                      <td className='text-sm text-base-content/70'>{staff.email}</td>
-                      <td>
-                        <select
-                          className='select select-bordered select-xs'
-                          value={staff.role}
-                          onChange={(e) => handleUpdateRole(staff.id, e.target.value as 'ADMIN' | 'STAFF')}
-                          aria-label={`Modifier le rôle de ${staff.name}`}
-                        >
-                          <option value='STAFF'>Staff</option>
-                          <option value='ADMIN'>Admin</option>
-                        </select>
-                      </td>
-                      <td>
-                        <button
-                          className='btn btn-xs btn-error'
-                          onClick={() => handleRemoveStaff(staff.id, staff.name)}
-                          aria-label={`Supprimer ${staff.name}`}
-                        >
-                          <Trash className='w-4 h-4' />
-                        </button>
-                      </td>
-                    </tr>
+                    <React.Fragment key={staff.id}>
+                      <tr>
+                        <th>{index + 1}</th>
+                        <td>{staff.name}</td>
+                        <td className='text-sm text-base-content/70'>{staff.email}</td>
+                        <td>
+                          <select
+                            className='select select-bordered select-xs'
+                            value={staff.role}
+                            onChange={(e) => handleUpdateRole(staff.id, e.target.value as 'ADMIN' | 'STAFF')}
+                            aria-label={`Modifier le rôle de ${staff.name}`}
+                          >
+                            <option value='STAFF'>Staff</option>
+                            <option value='ADMIN'>Admin</option>
+                          </select>
+                        </td>
+                        <td>
+                          <div className='flex gap-2'>
+                            <button
+                              className='btn btn-xs btn-primary'
+                              onClick={() => setSelectedStaffId(selectedStaffId === staff.id ? null : staff.id)}
+                              aria-label={`Gérer les postes de ${staff.name}`}
+                            >
+                              Postes
+                            </button>
+                            <button
+                              className='btn btn-xs btn-error'
+                              onClick={() => handleRemoveStaff(staff.id, staff.name)}
+                              aria-label={`Supprimer ${staff.name}`}
+                            >
+                              <Trash className='w-4 h-4' />
+                            </button>
+                          </div>
+                        </td>
+                      </tr>
+                      {selectedStaffId === staff.id && (
+                        <tr>
+                          <td colSpan={5} className='bg-base-200/50'>
+                            <div className='p-4'>
+                              <h4 className='font-semibold mb-2'>Postes assignés à {staff.name}</h4>
+                              
+                              {/* Liste des postes assignés */}
+                              <div className='mb-4'>
+                                {assignedPostsMap[staff.id]?.length > 0 ? (
+                                  <div className='flex flex-wrap gap-2'>
+                                    {assignedPostsMap[staff.id].map((post) => (
+                                      <div key={post.id} className='badge badge-primary gap-2'>
+                                        {post.name}
+                                        <button
+                                          onClick={() => handleUnassignPost(staff.id, post.id)}
+                                          className='btn btn-ghost btn-xs'
+                                          aria-label={`Retirer ${post.name}`}
+                                        >
+                                          <X className='w-3 h-3' />
+                                        </button>
+                                      </div>
+                                    ))}
+                                  </div>
+                                ) : (
+                                  <p className='text-sm text-base-content/70'>Aucun poste assigné</p>
+                                )}
+                              </div>
+
+                              {/* Dropdown pour assigner un nouveau poste */}
+                              <div className='flex gap-2 items-center'>
+                                <select
+                                  className='select select-bordered select-sm flex-1'
+                                  onChange={(e) => {
+                                    if (e.target.value) {
+                                      handleAssignPost(staff.id, e.target.value)
+                                      e.target.value = ''
+                                    }
+                                  }}
+                                  aria-label='Assigner un poste'
+                                >
+                                  <option value=''>Assigner un poste...</option>
+                                  {posts
+                                    .filter(post => !assignedPostsMap[staff.id]?.some(ap => ap.id === post.id))
+                                    .map((post) => (
+                                      <option key={post.id} value={post.id}>
+                                        {post.name}
+                                      </option>
+                                    ))}
+                                </select>
+                              </div>
+                            </div>
+                          </td>
+                        </tr>
+                      )}
+                    </React.Fragment>
                   ))}
                 </tbody>
               </table>

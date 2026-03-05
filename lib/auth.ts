@@ -50,14 +50,13 @@ export async function requireAuth(): Promise<string> {
 }
 
 /**
- * Vérifie si l'utilisateur a accès à une entreprise (propriétaire OU staff)
- * Retourne le rôle et l'ID de l'entreprise
+ * Vérifie si l'utilisateur connecté a accès à une entreprise (propriétaire OU staff)
+ * Ne prend AUCUN paramètre : identifie automatiquement l'utilisateur via Clerk
  * 
- * @param requestedEmail - Email du propriétaire de l'entreprise
  * @returns { role: 'OWNER' | 'ADMIN' | 'STAFF', companyId: string, staffId?: string }
- * @throws {Error} Si l'utilisateur n'a pas accès
+ * @throws {Error} Si l'utilisateur n'est pas authentifié ou n'a accès à aucune entreprise
  */
-export async function verifyStaffAccess(requestedEmail: string): Promise<{
+export async function verifyStaffAccess(): Promise<{
     role: 'OWNER' | 'ADMIN' | 'STAFF'
     companyId: string
     staffId?: string
@@ -68,36 +67,26 @@ export async function verifyStaffAccess(requestedEmail: string): Promise<{
         throw new Error('Utilisateur non authentifié')
     }
 
-    // Import prisma ici pour éviter les dépendances circulaires
     const { default: prisma } = await import('@/lib/prisma')
 
-    // 1. Vérifier si c'est le propriétaire
+    // 1. Vérifier si c'est le propriétaire d'une entreprise
     const company = await prisma.company.findUnique({
-        where: { email: requestedEmail }
+        where: { email: userEmail }
     })
 
-    if (!company) {
-        throw new Error('Entreprise non trouvée')
-    }
-
-    if (userEmail.toLowerCase() === requestedEmail.toLowerCase()) {
+    if (company) {
         return { role: 'OWNER', companyId: company.id }
     }
 
-    // 2. Vérifier si c'est un staff de cette entreprise
-    const staff = await prisma.staff.findUnique({
-        where: {
-            email_companyId: {
-                email: userEmail,
-                companyId: company.id
-            }
-        }
+    // 2. Vérifier si c'est un employé (staff) d'une entreprise
+    const staff = await prisma.staff.findFirst({
+        where: { email: userEmail }
     })
 
     if (staff) {
-        return { role: staff.role, companyId: company.id, staffId: staff.id }
+        return { role: staff.role, companyId: staff.companyId, staffId: staff.id }
     }
 
     // 3. Aucun accès
-    throw new Error('Vous n\'avez pas accès à cette entreprise')
+    throw new Error('Accès refusé : vous n\'êtes ni propriétaire ni employé d\'une entreprise')
 }

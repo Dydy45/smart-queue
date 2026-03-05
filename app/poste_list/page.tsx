@@ -5,8 +5,8 @@
 import React, { useEffect, useState } from 'react'
 import Wrapper from '../components/Wrapper'
 import { useUser } from '@clerk/nextjs'
-import { Post } from '@/app/generated/prisma/client'
-import { createPost, deletePost, getPostsByCompanyEmail } from '../actions'
+import { Post, Service } from '@/app/generated/prisma/client'
+import { createPost, deletePost, getPostsByCompanyEmail, getServiceByEmail } from '../actions'
 import { Trash } from 'lucide-react'
 import EmptyState from "../components/EmptyState";
 import Link from 'next/link'
@@ -17,9 +17,11 @@ const page = () => {
   const email = user?.primaryEmailAddress?.emailAddress as string
 
   const [newPostName, setNewPostName] = useState('');
+  const [selectedServiceId, setSelectedServiceId] = useState('');
   const [loading, setLoading] = useState<boolean>(false)
 
   const [posts, setPosts] = useState<Post[]>([])
+  const [services, setServices] = useState<Service[]>([])
 
   const fetchPosts = async () => {
     if(email){
@@ -32,27 +34,40 @@ const page = () => {
         console.error(error)
       }
     }
-      
+  }
+
+  const fetchServices = async () => {
+    if(email){
+      try {
+        const result = await getServiceByEmail(email)
+        if(result){
+          setServices(result)
+        }
+      } catch (error) {
+        console.error(error)
+      }
+    }
   }
 
   const handleCreatePost = async() => {
-    if(!newPostName) return
+    if(!newPostName || !selectedServiceId) return
     setLoading(true)
 
     try {
-
-      const newPost = await createPost(email, newPostName)
+      await createPost(email, newPostName, selectedServiceId)
       setLoading(false)
       setNewPostName("")
+      setSelectedServiceId("")
       fetchPosts()
-      
     } catch (error) {
       console.error(error)
+      setLoading(false)
     }
   }
 
   useEffect (() => {
     fetchPosts()
+    fetchServices()
   } , [email])
 
   const handleDeletePost = async (postId: string) => {
@@ -69,6 +84,19 @@ const page = () => {
       <h1 className='text-2xl font-bold mb-4'>Liste des postes</h1>
       <div className='flex flex-col md:flex-row'>
         <div className='space-y-2 mr-4'>
+          <select
+            className='select select-bordered select-sm w-full'
+            value={selectedServiceId}
+            onChange={(e) => setSelectedServiceId(e.target.value)}
+            aria-label="Service du poste"
+          >
+            <option value="" disabled>Sélectionner un service</option>
+            {services.map((service) => (
+              <option key={service.id} value={service.id}>
+                {service.name}
+              </option>
+            ))}
+          </select>
           <input 
           type="text"
           placeholder='Nom du poste'
@@ -77,7 +105,7 @@ const page = () => {
           onChange={(e) => setNewPostName(e.target.value)}
           aria-label="Nom du poste"
           />
-          <button className='btn btn-primary btn-sm' onClick={handleCreatePost} disabled={loading}>
+          <button className='btn btn-primary btn-sm' onClick={handleCreatePost} disabled={loading || !selectedServiceId}>
             {loading ? (
               <><span className='loading loading-spinner loading-sm' role="status" aria-label="Chargement"></span>Création...</>
             ) : 'Créer le poste'}

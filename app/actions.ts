@@ -2,7 +2,7 @@
 
 import crypto from 'crypto'
 import prisma from '@/lib/prisma'
-import { verifyCompanyOwnership, getCurrentUserEmail } from '@/lib/auth'
+import { verifyCompanyOwnership, getCurrentUserEmail, verifyStaffAccess } from '@/lib/auth'
 import { checkRateLimit, rateLimitConfig, RateLimitError } from '@/lib/ratelimit'
 import {
   serviceNameSchema,
@@ -25,20 +25,78 @@ function generateTicketNumber(): string {
   return `T${date}${random}`.toUpperCase().substring(0, 10)
 }
 
+/**
+ * Initialise la session utilisateur en une seule requête : vérifie/crée l'utilisateur, retourne son rôle et pageName
+ */
+export async function initUserSession(email: string, name: string): Promise<{
+    role: 'OWNER' | 'ADMIN' | 'STAFF' | null,
+    pageName: string | null
+}> {
+    if (!email) return { role: null, pageName: null }
+    try {
+        const validatedEmail = emailSchema.parse(email)
+
+        // Vérifier si c'est une entreprise existante
+        const existingCompany = await prisma.company.findUnique({
+            where: { email: validatedEmail },
+            select: { id: true, pageName: true }
+        })
+
+        if (existingCompany) {
+            return { role: 'OWNER' as const, pageName: existingCompany.pageName ?? null }
+        }
+
+        // Vérifier si c'est un staff
+        const existingStaff = await prisma.staff.findFirst({
+            where: { email: validatedEmail },
+            select: { role: true, company: { select: { pageName: true } } }
+        })
+
+        if (existingStaff) {
+            const role = existingStaff.role === 'ADMIN' ? 'ADMIN' as const : 'STAFF' as const
+            return { role, pageName: existingStaff.company?.pageName ?? null }
+        }
+
+        // Nouveau propriétaire : créer l'entreprise (validation du nom uniquement ici)
+        if (name) {
+            const validatedName = customerNameSchema.parse(name)
+            await prisma.company.create({
+                data: { email: validatedEmail, name: validatedName }
+            })
+        }
+
+        return { role: 'OWNER' as const, pageName: null }
+    } catch (error) {
+        console.error('[initUserSession] Error:', error)
+        return { role: null, pageName: null }
+    }
+}
+
 export async function checkAndAddUser(email: string, name: string) {
     if (!email) return
     try {
-        // Verify ownership
-        await verifyCompanyOwnership(email)
-
         // Validation
         const validatedEmail = emailSchema.parse(email)
         const validatedName = customerNameSchema.parse(name)
 
-        const existingUser = await prisma.company.findUnique({
+        // 1. Vérifier si c'est déjà une entreprise existante
+        const existingCompany = await prisma.company.findUnique({
             where: { email: validatedEmail }
         })
-        if (!existingUser && validatedName) {
+        if (existingCompany) {
+            return // L'entreprise existe déjà
+        }
+
+        // 2. Vérifier si c'est un staff d'une entreprise existante
+        const existingStaff = await prisma.staff.findFirst({
+            where: { email: validatedEmail }
+        })
+        if (existingStaff) {
+            return // C'est un employé, ne pas créer d'entreprise
+        }
+
+        // 3. Si ni entreprise ni staff, créer une nouvelle entreprise
+        if (validatedName) {
             await prisma.company.create({
                 data: { email: validatedEmail, name: validatedName }
             })
@@ -95,21 +153,11 @@ export async function createService(email: string, serviceName: string, avgTime:
 export async function getServiceByEmail(email: string) {
     if (!email) return
     try {
-        // Verify ownership
-        await verifyCompanyOwnership(email)
-
-        // Validation
-        const validatedEmail = emailSchema.parse(email)
-
-        const company = await prisma.company.findUnique({
-            where: { email: validatedEmail }
-        })
-        if (!company) {
-            throw new Error("Company not found")
-        }
+        // Verify staff access (OWNER, ADMIN ou STAFF)
+        const accessInfo = await verifyStaffAccess()
 
         const services = await prisma.service.findMany({
-            where: { companyId: company.id },
+            where: { companyId: accessInfo.companyId },
             include: { company: true }
         })
         return services
@@ -164,21 +212,64 @@ export async function deleteServiceById(serviceId: string) {
 
 export async function getCompanyPageName(email: string) {
     try {
+        // 1. Vérifier si c'est le propriétaire d'une entreprise
         const company = await prisma.company.findUnique({
-            where: {
-                email: email
-            },
-            select: {
-                pageName: true
-            }
+            where: { email: email }
         })
 
         if (company) {
             return company.pageName
         }
 
+        // 2. Vérifier si c'est un staff et récupérer le pageName de son entreprise
+        const staff = await prisma.staff.findFirst({
+            where: { email: email },
+            include: {
+                company: {
+                    select: {
+                        pageName: true
+                    }
+                }
+            }
+        })
+
+        if (staff && staff.company) {
+            return staff.company.pageName
+        }
+
     } catch (error) {
         console.error(error)
+    }
+}
+
+export async function getUserRole(email: string): Promise<'OWNER' | 'ADMIN' | 'STAFF' | null> {
+    try {
+        // 1. Vérifier si c'est le propriétaire d'une entreprise
+        const company = await prisma.company.findUnique({
+            where: { email: email }
+        })
+
+        if (company) {
+            return 'OWNER' as const
+        }
+
+        // 2. Vérifier si c'est un staff
+        const staff = await prisma.staff.findFirst({
+            where: { email: email },
+            select: {
+                role: true
+            }
+        })
+
+        if (staff) {
+            // Forcer le typage explicite pour la sérialisation
+            return staff.role === 'ADMIN' ? 'ADMIN' as const : 'STAFF' as const
+        }
+
+        return null
+    } catch (error) {
+        console.error('Error in getUserRole:', error)
+        return null
     }
 }
 
@@ -283,20 +374,37 @@ export async function createTicket(serviceId:string , nameComplete:string , page
     }
 }
 
+// eslint-disable-next-line @typescript-eslint/no-unused-vars
 export async function getPendingTicketsByEmail(email:string) {
     try {
-        // Verify ownership
-        await verifyCompanyOwnership(email)
+        // Verify staff access (OWNER, ADMIN ou STAFF)
+        const accessInfo = await verifyStaffAccess()
 
-        // Validation
-        const validatedEmail = emailSchema.parse(email)
+        // Si c'est un STAFF, récupérer les services de ses postes assignés
+        let assignedServiceIds: string[] = []
+        if (accessInfo.role === 'STAFF' && accessInfo.staffId) {
+            const staff = await prisma.staff.findUnique({
+                where: { id: accessInfo.staffId },
+                include: { 
+                    assignedPosts: {
+                        select: { serviceId: true }
+                    }
+                }
+            })
+            // Extraire les serviceIds uniques des postes assignés
+            assignedServiceIds = [...new Set(staff?.assignedPosts.map(post => post.serviceId) || [])]
+        }
 
-      const company = await prisma.company.findUnique({
+        const company = await prisma.company.findUnique({
             where: {
-                email: validatedEmail
+                id: accessInfo.companyId
             },
             include: {
                 services : {
+                    // Si STAFF, filtrer par services de ses postes
+                    where: accessInfo.role === 'STAFF' && assignedServiceIds.length > 0 ? {
+                        id: { in: assignedServiceIds }
+                    } : {},
                     include : {
                         tickets: {
                             where : {
@@ -315,7 +423,7 @@ export async function getPendingTicketsByEmail(email:string) {
         })
 
         if(!company) {
-            throw new Error(`Aucune entreprise trouvée avec le nom de page : ${validatedEmail}`)
+            throw new Error(`Aucune entreprise trouvée`)
         }
         let pendingTickets = company.services.flatMap((service) =>
             service.tickets.map((Ticket) => ({
@@ -369,7 +477,7 @@ export async function getTicketsByIds(ticketNums : any[]) {
     }
 }
 
-export async function createPost (email: string, postName: string) {
+export async function createPost (email: string, postName: string, serviceId: string) {
     try {
         // Rate limiting: 5 postes par minute par email
         const { success: rateLimitSuccess } = await checkRateLimit(
@@ -398,11 +506,21 @@ export async function createPost (email: string, postName: string) {
             throw new Error(`Aucune entreprise trouvée avec cet Email`)
         }
 
+        // Vérifier que le service appartient à l'entreprise
+        const service = await prisma.service.findUnique({
+            where: { id: serviceId }
+        })
+
+        if (!service || service.companyId !== company.id) {
+            throw new Error('Service invalide ou n\'appartient pas à votre entreprise')
+        }
+
         // eslint-disable-next-line @typescript-eslint/no-unused-vars
         const newPost = await prisma.post.create({
             data: {
                 name : validatedPostName,
-                companyId : company.id
+                companyId : company.id,
+                serviceId : serviceId
             }
         })
     } catch (error) {
@@ -456,30 +574,19 @@ export async function deletePost (postId: string) {
     }
 }
 
+// eslint-disable-next-line @typescript-eslint/no-unused-vars
 export async function getPostsByCompanyEmail(email: string) {
     try {
-        // Verify ownership
-        await verifyCompanyOwnership(email)
-
-        // Validation
-        const validatedEmail = emailSchema.parse(email)
-
-        const company = await prisma.company.findUnique({
-            where: {
-                email: validatedEmail
-            }
-        })
-
-        if (!company) {
-            throw new Error(`Aucune entreprise trouvée avec cet email`);
-        }
+        // Verify staff access (OWNER, ADMIN ou STAFF)
+        const accessInfo = await verifyStaffAccess()
 
         const posts = await prisma.post.findMany({
             where: {
-                companyId: company.id
+                companyId: accessInfo.companyId
             },
             include: {
-                company: true
+                company: true,
+                service: true
             }
         })
         return posts
@@ -507,11 +614,20 @@ export async function getPostNameById(postId: string) {
 
 export async function getLastTicketByEmail(email: string, idPoste: string) {
     try {
-        // Verify ownership
-        await verifyCompanyOwnership(email)
+        // Verify staff access (OWNER, ADMIN ou STAFF)
+        const accessInfo = await verifyStaffAccess()
 
-        // Validation
-        const validatedEmail = emailSchema.parse(email)
+        // Si STAFF, vérifier qu'il a accès à ce poste
+        if (accessInfo.role === 'STAFF' && accessInfo.staffId) {
+            const staff = await prisma.staff.findUnique({
+                where: { id: accessInfo.staffId },
+                include: { assignedPosts: true }
+            })
+            const hasAccess = staff?.assignedPosts.some(post => post.id === idPoste)
+            if (!hasAccess) {
+                throw new Error('Vous n\'avez pas accès à ce poste')
+            }
+        }
 
         const existingTicket = await prisma.ticket.findFirst({
             where: {
@@ -534,7 +650,7 @@ export async function getLastTicketByEmail(email: string, idPoste: string) {
         const ticket = await prisma.ticket.findFirst({
             where: {
                 status: "PENDING",
-                service: { company: { email: validatedEmail } }
+                service: { company: { id: accessInfo.companyId } }
             },
             orderBy: { createdAt: "asc" },
             include: { service: true, post: true }
@@ -574,6 +690,14 @@ export async function getLastTicketByEmail(email: string, idPoste: string) {
 
 export async function updateTicketStatus(ticketId: string, newStatus: string) {
     try {
+        const email = await getCurrentUserEmail()
+        if (!email) {
+            throw new Error('Utilisateur non authentifié')
+        }
+
+        // Verify staff access (OWNER, ADMIN ou STAFF)
+        await verifyStaffAccess()
+
         // Rate limiting: 20 mises à jour par minute par ticket
         const { success: rateLimitSuccess } = await checkRateLimit(
           `update-ticket:${ticketId}`,
@@ -1022,6 +1146,52 @@ export async function unassignPostFromStaff(email: string, staffId: string, post
         }
         console.error('Error in unassignPostFromStaff:', error)
         throw error
+    }
+}
+
+/**
+ * Récupère les postes assignés au staff actuellement connecté (s'auto-identifie via Clerk)
+ */
+export async function getMyAssignedPosts() {
+    try {
+        console.log('[getMyAssignedPosts] Starting...')
+        const accessInfo = await verifyStaffAccess()
+        console.log('[getMyAssignedPosts] Access info:', { role: accessInfo.role, staffId: accessInfo.staffId })
+        
+        if (!accessInfo.staffId) {
+            console.log('[getMyAssignedPosts] No staffId, returning empty array')
+            return []
+        }
+
+        const staff = await prisma.staff.findUnique({
+            where: { id: accessInfo.staffId },
+            select: {
+                assignedPosts: {
+                    select: {
+                        id: true,
+                        name: true,
+                        companyId: true,
+                        serviceId: true,
+                        createdAt: true
+                    }
+                }
+            }
+        })
+
+        const posts = staff?.assignedPosts ?? []
+        console.log('[getMyAssignedPosts] Found', posts.length, 'assigned posts')
+        
+        // Convertir les dates en strings pour la sérialisation
+        return posts.map((post: { id: string; name: string; companyId: string; serviceId: string; createdAt: Date }) => ({
+            id: post.id,
+            name: post.name,
+            companyId: post.companyId,
+            serviceId: post.serviceId,
+            createdAt: post.createdAt.toISOString()
+        }))
+    } catch (error) {
+        console.error('[getMyAssignedPosts] Error:', error)
+        return []
     }
 }
 

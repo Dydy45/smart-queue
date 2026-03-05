@@ -24,6 +24,7 @@ model Service {
   avgTime   Int
   companyId String
   company   Company  @relation(fields: [companyId], references: [id])
+  posts     Post[]
   tickets   Ticket[]
 }
 
@@ -31,8 +32,10 @@ model Post {
   id            String   @id @default(uuid())
   name          String
   companyId     String
+  serviceId     String
   createdAt     DateTime @default(now())
   company       Company  @relation(fields: [companyId], references: [id])
+  service       Service  @relation(fields: [serviceId], references: [id], onDelete: Cascade)
   tickets       Ticket[]
   assignedStaff Staff[]
 }

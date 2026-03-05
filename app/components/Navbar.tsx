@@ -3,7 +3,7 @@ import { UserButton, useUser } from '@clerk/nextjs'
 import { AudioWaveform, GlobeLock, Menu, Moon, Settings, Sun, X } from 'lucide-react'
 import React, { useEffect, useState } from 'react'
 import Link from 'next/link'
-import { checkAndAddUser, getCompanyPageName } from '../actions'
+import { initUserSession } from '../actions'
 import SettingsModal from './SettingsModal'
 
 const Navbar = () => {
@@ -11,6 +11,13 @@ const Navbar = () => {
     const email = user?.primaryEmailAddress?.emailAddress
     const [menuOpen, setMenuOpen] = useState(false)
     const [pageName, setPageName] = useState<string | null>(null)
+    const [userRole, setUserRole] = useState<'OWNER' | 'ADMIN' | 'STAFF' | null>(() => {
+        if (typeof window !== 'undefined') {
+            return localStorage.getItem('sq_user_role') as 'OWNER' | 'ADMIN' | 'STAFF' | null
+        }
+        return null
+    })
+    const [isRoleLoading, setIsRoleLoading] = useState(false)
     const [isDark, setIsDark] = useState(() => {
         if (typeof window !== 'undefined') {
             return localStorage.getItem('theme') === 'dark'
@@ -18,13 +25,23 @@ const Navbar = () => {
         return false
     })
 
-    const navLinks = [
-        { href: "/", label: "Accueil" },
-        { href: "/services", label: "Vos services" },
-        { href: "/poste_list", label: "Vos postes" },
-        { href: "/staff", label: "Gestion Staff" },
-        { href: "/dashboard", label: "Tableau de bord" }
-    ]
+    // Filtrer les liens selon le rôle
+    const getNavLinks = () => {
+        const allLinks = [
+            { href: "/", label: "Accueil", roles: ['OWNER', 'ADMIN', 'STAFF'] },
+            { href: "/services", label: "Vos services", roles: ['OWNER', 'ADMIN'] },
+            { href: "/poste_list", label: "Vos postes", roles: ['OWNER', 'ADMIN'] },
+            { href: "/staff", label: "Gestion Staff", roles: ['OWNER'] },
+            { href: "/dashboard", label: "Tableau de bord", roles: ['OWNER', 'ADMIN'] }
+        ]
+        
+        // Si chargement ou rôle inconnu, n'afficher que les liens communs
+        if (isRoleLoading || !userRole) return [{ href: "/", label: "Accueil", roles: ['OWNER', 'ADMIN', 'STAFF'] }]
+        
+        return allLinks.filter(link => link.roles.includes(userRole))
+    }
+    
+    const navLinks = getNavLinks()
 
     const renderLinks = (classNames: string) => (
         <>
@@ -64,12 +81,20 @@ const Navbar = () => {
     useEffect(() => {
         const init = async () => {
             if (email && user.fullName) {
-                await checkAndAddUser(email, user.fullName)
-                const pageName = await getCompanyPageName(email)
-                if (pageName) {
-                    setPageName(pageName)
+                setIsRoleLoading(true)
+                
+                const { role, pageName } = await initUserSession(email, user.fullName)
+                
+                if (pageName) setPageName(pageName)
+                
+                if (role) {
+                    localStorage.setItem('sq_user_role', role)
+                } else {
+                    localStorage.removeItem('sq_user_role')
                 }
-
+                
+                setUserRole(role)
+                setIsRoleLoading(false)
             }
         }
         init()
