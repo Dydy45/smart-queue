@@ -2,6 +2,7 @@
 
 ## Table des matières
 - [Vue d'ensemble](#vue-densemble)
+- [Landing Page](#landing-page)
 - [Architecture](#architecture)
 - [Technologies utilisées](#technologies-utilisées)
 - [Dépendances](#dépendances)
@@ -26,10 +27,104 @@
 - ✅ **Temps réel** : Mise à jour automatique des tickets toutes les 5 secondes
 - ✅ **Authentification sécurisée** : Intégration Clerk pour une gestion d'utilisateurs robuste
 - ✅ **Rate limiting** : Protection contre les abus avec Upstash Redis
+- ✅ **Landing Page** : Page de présentation professionnelle avec vidéo mode d'emploi
 
 ---
 
-## 🏗️ Architecture
+## Landing Page
+
+SmartQueue dispose d'une **landing page professionnelle** accessible sur `/landing` pour présenter le produit aux prospects.
+
+### Sections incluses
+
+#### 1. Hero Section
+- Titre accrocheur et proposition de valeur claire
+- Boutons CTA : "Commencer gratuitement" et "Voir la démo"
+- **Placeholder vidéo** : Emplacement prévu pour intégrer votre vidéo mode d'emploi (3-5 minutes)
+
+#### 2. Problème / Solution
+- Mise en évidence des problèmes courants (clients frustrés, désorganisation)
+- Présentation de SmartQueue comme solution complète
+
+#### 3. Fonctionnalités clés
+Cartes interactives présentant :
+- Multi-services avec icônes
+- Tableau de bord en temps réel
+- Sécurité et authentification
+- Interface responsive
+- Gain de temps mesurable
+
+#### 4. Comment ça marche
+Processus en 3 étapes simples :
+1. **Configurez** : Services et postes en 5 minutes
+2. **Partagez** : Lien de votre page publique
+3. **Gérez** : Traitement efficace des tickets
+
+#### 5. Cas d'usage
+Exemples concrets pour 4 secteurs :
+- � **Santé** : Cabinets médicaux, cliniques, laboratoires
+- 🏛️ **Administration** : Mairies, préfectures, agences
+- 🏦 **Finance** : Banques, assurances, comptables
+- ✂️ **Services** : Salons, garages, ateliers
+
+#### 6. FAQ (Questions fréquentes)
+6 questions/réponses avec accordéon interactif :
+- Comment créer mon premier service ?
+- Puis-je avoir plusieurs employés sur un même poste ?
+- Les données sont-elles sécurisées ?
+- Puis-je personnaliser la page client ?
+- Comment mes employés accèdent-ils à leurs postes ?
+- Y a-t-il une limite de tickets ?
+
+#### 7. CTA Final
+Appel à l'action fort : "Prêt à optimiser votre gestion de file d'attente ?"
+
+### Intégration de la vidéo
+
+Le placeholder vidéo est prêt à recevoir votre vidéo mode d'emploi. Pour l'intégrer :
+
+**Option 1 : YouTube/Vimeo**
+```tsx
+<iframe
+  className="w-full h-full"
+  src="https://www.youtube.com/embed/VOTRE_VIDEO_ID"
+  allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
+  allowFullScreen
+/>
+```
+
+**Option 2 : Fichier local**
+```tsx
+<video className="w-full h-full" controls>
+  <source src="/videos/demo.mp4" type="video/mp4" />
+</video>
+```
+
+**Option 3 : Loom**
+```tsx
+<iframe
+  src="https://www.loom.com/embed/VOTRE_VIDEO_ID"
+  className="w-full h-full"
+  allowFullScreen
+/>
+```
+
+### Accès
+
+- **URL** : `http://localhost:3000/landing` (développement)
+- **Production** : `https://votre-domaine.com/landing`
+
+### Personnalisation
+
+Vous pouvez facilement personnaliser :
+- **Couleurs** : Modifiez les classes DaisyUI (`btn-primary`, `text-accent`, etc.)
+- **Contenu** : Éditez directement `app/landing/page.tsx`
+- **Sections** : Ajoutez/supprimez des sections selon vos besoins
+- **Témoignages** : Ajoutez une section témoignages clients
+
+---
+
+## Architecture
 
 ### Hiérarchie des entités
 

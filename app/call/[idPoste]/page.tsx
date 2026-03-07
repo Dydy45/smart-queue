@@ -161,7 +161,7 @@ const page = ({ params }: { params: Promise<{ idPoste: string }> }) => {
                             <div className='flex justify-between items-start'>
                                 <div>
                                     <p className='text-xs text-base-content/50 uppercase tracking-widest mb-1'>Ticket actuel</p>
-                                    <h2 className='text-7xl font-black text-primary tracking-tight'>{ticket.num}</h2>
+                                    <h2 className='text-3xl font-black text-primary tracking-tight'>{ticket.num}</h2>
                                 </div>
                                 <span className={`badge badge-lg ${statusStyle?.badgeClass}`}>{statusStyle?.label}</span>
                             </div>

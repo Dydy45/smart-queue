@@ -7,7 +7,10 @@
     "socket-server": "tsx server.js",
     "build": "next build",
     "start": "next start",
-    "lint": "eslint"
+    "lint": "eslint",
+    "video:preview": "remotion studio remotion-video/index.ts",
+    "video:render": "remotion render remotion-video/index.ts SmartQueueDemo out/video.mp4",
+    "video:render-scene": "remotion render remotion-video/index.ts"
   },
   "dependencies": {
     "@clerk/nextjs": "^6.37.0",
@@ -27,6 +30,9 @@
     "zod": "^4.3.6"
   },
   "devDependencies": {
+    "@remotion/bundler": "^4.0.434",
+    "@remotion/cli": "^4.0.434",
+    "@remotion/renderer": "^4.0.434",
     "@tailwindcss/postcss": "^4",
     "@types/node": "^20",
     "@types/pg": "^8.18.0",
@@ -36,6 +42,7 @@
     "eslint": "^9",
     "eslint-config-next": "16.1.6",
     "prisma": "^7.3.0",
+    "remotion": "^4.0.434",
     "tailwindcss": "^4",
     "tsx": "^4.21.0",
     "typescript": "^5"
