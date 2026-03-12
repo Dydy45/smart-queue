@@ -28,7 +28,7 @@ const Navbar = () => {
     // Filtrer les liens selon le rôle
     const getNavLinks = () => {
         const allLinks = [
-            { href: "/", label: "Accueil", roles: ['OWNER', 'ADMIN', 'STAFF'] },
+            { href: "/home", label: "Accueil", roles: ['OWNER', 'ADMIN', 'STAFF'] },
             { href: "/services", label: "Vos services", roles: ['OWNER', 'ADMIN'] },
             { href: "/poste_list", label: "Vos postes", roles: ['OWNER', 'ADMIN'] },
             { href: "/staff", label: "Gestion Staff", roles: ['OWNER'] },
@@ -36,7 +36,7 @@ const Navbar = () => {
         ]
         
         // Si chargement ou rôle inconnu, n'afficher que les liens communs
-        if (isRoleLoading || !userRole) return [{ href: "/", label: "Accueil", roles: ['OWNER', 'ADMIN', 'STAFF'] }]
+        if (isRoleLoading || !userRole) return [{ href: "/home", label: "Accueil", roles: ['OWNER', 'ADMIN', 'STAFF'] }]
         
         return allLinks.filter(link => link.roles.includes(userRole))
     }
