@@ -19,6 +19,8 @@ const page = ({ params }: { params: Promise<{ pageName: string }> }) => {
   const [services, setServices] = useState<Service[]>([])
   const [selectedServiceId, setSelectedServiceId] = useState<string | null>(null)
   const [nameComplete, setNameComplete] = useState<string>("")
+  const [phoneNumber, setPhoneNumber] = useState<string>("")
+  const [whatsappConsent, setWhatsappConsent] = useState(false)
   const [ticketNums, setTicketNums] = useState<any[]>([])
   const [isLoading, setIsLoading] = useState(false)
   const [isLoadingServices, setIsLoadingServices] = useState(true)
@@ -127,10 +129,18 @@ const page = ({ params }: { params: Promise<{ pageName: string }> }) => {
     }
     setIsLoading(true)
     try {
-      const ticketNum = await createTicket(selectedServiceId, nameComplete, pageName || '')
+      const ticketNum = await createTicket(
+          selectedServiceId,
+          nameComplete,
+          pageName || '',
+          whatsappConsent ? phoneNumber : undefined,
+          whatsappConsent || undefined,
+        )
       if (ticketNum) {
         setSelectedServiceId(null)
         setNameComplete("")
+        setPhoneNumber("")
+        setWhatsappConsent(false)
         const updatedTicketNums = [...ticketNums, ticketNum];
         setTicketNums(updatedTicketNums)
         localStorage.setItem("ticketNums", JSON.stringify(updatedTicketNums))
@@ -187,6 +197,34 @@ const page = ({ params }: { params: Promise<{ pageName: string }> }) => {
             disabled={isLoading}
             aria-label="Votre nom"
           />
+
+          {/* WhatsApp notification opt-in */}
+          <div className="bg-base-200 rounded-lg p-3 space-y-2">
+            <label className="flex items-center gap-2 cursor-pointer">
+              <input
+                type="checkbox"
+                className="checkbox checkbox-primary checkbox-sm"
+                checked={whatsappConsent}
+                onChange={(e) => setWhatsappConsent(e.target.checked)}
+                disabled={isLoading}
+              />
+              <span className="text-sm">
+                Recevoir une notification WhatsApp quand mon tour approche
+              </span>
+            </label>
+            {whatsappConsent && (
+              <input
+                type="tel"
+                placeholder="Numéro WhatsApp (ex: +33612345678)"
+                className="input input-bordered input-sm w-full"
+                value={phoneNumber}
+                onChange={(e) => setPhoneNumber(e.target.value)}
+                disabled={isLoading}
+                aria-label="Numéro WhatsApp"
+              />
+            )}
+          </div>
+
           <button 
             type="submit" 
             className='btn btn-primary w-fit'

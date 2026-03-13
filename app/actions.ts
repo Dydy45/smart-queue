@@ -326,7 +326,13 @@ export async function getServicesByPageName(pageName: string) {
     }
 }
 
-export async function createTicket(serviceId:string , nameComplete:string , pageName:string) {
+export async function createTicket(
+    serviceId: string,
+    nameComplete: string,
+    pageName: string,
+    phoneNumber?: string,
+    whatsappConsent?: boolean,
+) {
     try {
         // Rate limiting: 10 tickets par minute par page
         const validatedPageName = pageNameSchema.parse(pageName)
@@ -352,6 +358,17 @@ export async function createTicket(serviceId:string , nameComplete:string , page
             throw new Error(`Aucune entreprise trouvée avec le nom de page : ${validatedPageName}`)
         }
 
+        // Validation du numéro WhatsApp (si fourni)
+        let validatedPhone: string | null = null
+        if (phoneNumber && whatsappConsent) {
+            const { validatePhoneNumber } = await import('@/lib/whatsapp')
+            const { valid, formatted, error } = validatePhoneNumber(phoneNumber)
+            if (!valid) {
+                throw new Error(error || 'Numéro de téléphone invalide')
+            }
+            validatedPhone = formatted
+        }
+
         const ticketNum = generateTicketNumber()
 
         // eslint-disable-next-line @typescript-eslint/no-unused-vars
@@ -359,8 +376,10 @@ export async function createTicket(serviceId:string , nameComplete:string , page
             data: {
                 serviceId,
                 nameComplete: validatedNameComplete,
-                num : ticketNum,
-                status:"PENDING"
+                num: ticketNum,
+                status: "PENDING",
+                phoneNumber: validatedPhone,
+                whatsappConsent: !!(whatsappConsent && validatedPhone),
             }
         })
 
@@ -371,6 +390,7 @@ export async function createTicket(serviceId:string , nameComplete:string , page
           throw error
         }
         console.error(error)
+        throw error
     }
 }
 
@@ -677,6 +697,15 @@ export async function getLastTicketByEmail(email: string, idPoste: string) {
             include: { service: true }
         })
 
+        // Notifications WhatsApp (non-bloquant)
+        try {
+            const { checkAndNotifyUpcomingTickets, notifyTicketCalled } = await import('@/app/actions/whatsapp')
+            notifyTicketCalled(updatedTicket.id).catch(console.error)
+            checkAndNotifyUpcomingTickets(updatedTicket.serviceId).catch(console.error)
+        } catch (whatsappError) {
+            console.error('[WhatsApp] Erreur notification (non-bloquant):', whatsappError)
+        }
+
         return {
             ...updatedTicket,
             serviceName: updatedTicket.service.name,
@@ -708,10 +737,29 @@ export async function updateTicketStatus(ticketId: string, newStatus: string) {
           throw new RateLimitError('Trop de mises à jour. Veuillez attendre une minute.')
         }
 
-        await prisma.ticket.update({
+        const updatedTicket = await prisma.ticket.update({
             where: { id: ticketId },
-            data: { status: newStatus }
+            data: { status: newStatus },
+            select: { id: true, serviceId: true, status: true }
         })
+
+        // Notifications WhatsApp (non-bloquant)
+        try {
+            const { checkAndNotifyUpcomingTickets, notifyTicketCalled } = await import('@/app/actions/whatsapp')
+
+            if (newStatus === 'CALL') {
+                // Notifier le client que son ticket est appelé
+                notifyTicketCalled(ticketId).catch(console.error)
+            }
+
+            if (newStatus === 'PROCESSING' || newStatus === 'FINISHED') {
+                // Notifier les prochains clients dans la file
+                checkAndNotifyUpcomingTickets(updatedTicket.serviceId).catch(console.error)
+            }
+        } catch (whatsappError) {
+            // Ne pas bloquer le flux principal si WhatsApp échoue
+            console.error('[WhatsApp] Erreur notification (non-bloquant):', whatsappError)
+        }
     } catch (error) {
         if (error instanceof RateLimitError) {
           throw error

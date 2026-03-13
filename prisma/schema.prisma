@@ -41,16 +41,20 @@ model Post {
 }
 
 model Ticket {
-  id           String   @id @default(uuid())
-  serviceId    String
-  num          String   @unique
-  nameComplete String
-  status       String   @default("PENDING")
-  createdAt    DateTime @default(now())
-  postName     String?
-  postId       String?
-  post         Post?    @relation(fields: [postId], references: [id])
-  service      Service  @relation(fields: [serviceId], references: [id], onDelete: Cascade)
+  id                String   @id @default(uuid())
+  serviceId         String
+  num               String   @unique
+  nameComplete      String
+  status            String   @default("PENDING")
+  createdAt         DateTime @default(now())
+  postName          String?
+  postId            String?
+  phoneNumber       String?
+  whatsappConsent   Boolean  @default(false)
+  whatsappNotified  Boolean  @default(false)
+  whatsappMessageId String?
+  post              Post?    @relation(fields: [postId], references: [id])
+  service           Service  @relation(fields: [serviceId], references: [id], onDelete: Cascade)
 }
 
 enum Role {
