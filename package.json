@@ -45,6 +45,7 @@
     "eslint-config-next": "16.1.6",
     "prisma": "^7.3.0",
     "remotion": "^4.0.434",
+    "sharp": "^0.34.5",
     "tailwindcss": "^4",
     "tsx": "^4.21.0",
     "typescript": "^5"

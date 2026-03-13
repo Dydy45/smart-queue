@@ -5,6 +5,7 @@ import React, { useEffect, useState } from 'react'
 import Link from 'next/link'
 import { initUserSession } from '../actions'
 import SettingsModal from './SettingsModal'
+import InstallPWA from './InstallPWA'
 
 const Navbar = () => {
     const { user } = useUser()
@@ -118,6 +119,7 @@ const Navbar = () => {
 
                 <div className=' hidden space-x-2 sm:flex items-center'>
                     {renderLinks("btn")}
+                    <InstallPWA />
                     <UserButton />
                 </div>
             </div>
@@ -130,6 +132,7 @@ const Navbar = () => {
                     </button>
                 </div>
                 {renderLinks("btn")}
+                <InstallPWA />
             </div>
 
             <SettingsModal

@@ -4,6 +4,9 @@ import "./globals.css";
 import { ClerkProvider } from "@clerk/nextjs";
 import { ToastProvider } from "@/lib/ToastProvider";
 import '@/lib/init' // Initialiser le rate limiting
+import RegisterSW from './components/RegisterSW'
+import OfflineIndicator from './components/OfflineIndicator'
+import UpdateNotification from './components/UpdateNotification'
 
 const geistSans = Geist({
   variable: "--font-geist-sans",
@@ -51,6 +54,15 @@ export default function RootLayout({
       <ToastProvider>
         <html lang="en" data-theme="valentine">
           <head>
+            <link rel="manifest" href="/manifest.json" />
+            <link rel="apple-touch-icon" href="/apple-touch-icon.png" />
+            <link rel="icon" type="image/png" href="/favicon.png" />
+            <meta name="theme-color" content="#570df8" />
+            <meta name="apple-mobile-web-app-capable" content="yes" />
+            <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
+            <meta name="apple-mobile-web-app-title" content="SmartQueue" />
+            <meta name="format-detection" content="telephone=no" />
+            <meta name="mobile-web-app-capable" content="yes" />
             <script
               dangerouslySetInnerHTML={{
                 __html: `
@@ -65,6 +77,9 @@ export default function RootLayout({
           <body
             className={`${geistSans.variable} ${geistMono.variable} antialiased`}
           >
+            <RegisterSW />
+            <OfflineIndicator />
+            <UpdateNotification />
             {children}
           </body>
         </html>
