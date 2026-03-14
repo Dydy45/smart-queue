@@ -93,3 +93,24 @@ export const ticketIdSchema = z
 export const ticketStatusSchema = z
   .enum(['PENDING', 'CALL', 'IN_PROGRESS', 'FINISHED'])
   .default('PENDING')
+
+/**
+ * Feedback validation schema
+ * Used when submitting client feedback after service
+ */
+export const feedbackSchema = z.object({
+  ticketId: z.string().uuid('ID de ticket invalide'),
+  rating: z
+    .number()
+    .int('La note doit être un nombre entier')
+    .min(1, 'La note minimum est 1')
+    .max(5, 'La note maximum est 5'),
+  comment: z
+    .string()
+    .max(500, 'Le commentaire ne peut pas dépasser 500 caractères')
+    .trim()
+    .optional()
+    .or(z.literal('')),
+})
+
+export type FeedbackInput = z.infer<typeof feedbackSchema>

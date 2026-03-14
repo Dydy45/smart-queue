@@ -3,6 +3,7 @@
 "use client"
 import { createTicket, getServicesByPageName, getTicketsByIds, getTicketsWithContext } from '@/app/actions'
 import TicketComponent from '@/app/components/TicketComponent'
+import FeedbackModal from '@/app/components/FeedbackModal'
 import { Service } from '@/app/generated/prisma/client'
 import { Ticket } from '@/app/type'
 import { useToast } from '@/lib/useToast'
@@ -25,6 +26,8 @@ const page = ({ params }: { params: Promise<{ pageName: string }> }) => {
   const [isLoading, setIsLoading] = useState(false)
   const [isLoadingServices, setIsLoadingServices] = useState(true)
   const [currentPage, setCurrentPage] = useState(1)
+  const [finishedTickets, setFinishedTickets] = useState<Ticket[]>([])
+  const [feedbackTicket, setFeedbackTicket] = useState<Ticket | null>(null)
   const TICKETS_PER_PAGE = 5
 
   const totalPages = Math.ceil(tickets.length / TICKETS_PER_PAGE)
@@ -95,25 +98,33 @@ const page = ({ params }: { params: Promise<{ pageName: string }> }) => {
       // Utiliser la nouvelle fonction pour avoir le contexte complet
       const { clientTickets, allTickets: allPendingTickets } = await getTicketsWithContext(ticketNums, pageName || '')
 
-      const validTickets = clientTickets?.filter(ticket => ticket.status !== "FINISHED")
-      const validTicketNums = validTickets?.map(ticket => ticket.num)
+      const activeTickets = clientTickets?.filter(ticket => ticket.status !== "FINISHED") || []
+      const newlyFinished = clientTickets?.filter(ticket => ticket.status === "FINISHED") || []
+
+      // Garder les tickets terminés en attente de feedback
+      if (newlyFinished.length > 0) {
+        setFinishedTickets(prev => {
+          const existingIds = new Set(prev.map(t => t.id))
+          const newOnes = newlyFinished.filter(t => !existingIds.has(t.id))
+          return [...prev, ...newOnes]
+        })
+      }
+
+      const validTicketNums = activeTickets.map(ticket => ticket.num)
       localStorage.setItem('ticketNums', JSON.stringify(validTicketNums))
 
-      if (validTickets) {
-        setTickets(validTickets)
-        setAllTickets(allPendingTickets)
-      }
+      setTickets(activeTickets)
+      setAllTickets(allPendingTickets)
 
     } catch (error) {
       console.error(error)
       // Fallback à l'ancienne fonction si quelque chose se passe mal
       try {
         const fetchedTickets = await getTicketsByIds(ticketNums)
-        const validTickets = fetchedTickets?.filter(ticket => ticket.status !== "FINISHED")
-        const validTicketNums = validTickets?.map(ticket => ticket.num)
+        const activeTickets = fetchedTickets?.filter(ticket => ticket.status !== "FINISHED") || []
+        const validTicketNums = activeTickets.map(ticket => ticket.num)
         localStorage.setItem('ticketNums', JSON.stringify(validTicketNums))
-        if (validTickets)
-          setTickets(validTickets)
+        setTickets(activeTickets)
       } catch (fallbackError) {
         console.error(fallbackError)
         showError('Erreur lors de la synchronisation des tickets')
@@ -306,9 +317,46 @@ const page = ({ params }: { params: Promise<{ pageName: string }> }) => {
               )}
             </div>
           )}
+
+          {/* Tickets terminés en attente de feedback */}
+          {finishedTickets.length > 0 && (
+            <div className="mt-6">
+              <h2 className="text-lg font-bold mb-3">Donnez votre avis</h2>
+              <div className="grid grid-cols-1 gap-3">
+                {finishedTickets.map((ticket) => (
+                  <div key={ticket.id} className="card bg-base-200 p-4 flex flex-row items-center justify-between">
+                    <div>
+                      <span className="font-mono font-bold">#{ticket.num}</span>
+                      <span className="text-sm text-base-content/60 ml-2">{ticket.nameComplete}</span>
+                      <span className="badge badge-success badge-sm ml-2">Terminé</span>
+                    </div>
+                    <button
+                      onClick={() => setFeedbackTicket(ticket)}
+                      className="btn btn-primary btn-sm gap-1"
+                    >
+                      ⭐ Donner mon avis
+                    </button>
+                  </div>
+                ))}
+              </div>
+            </div>
+          )}
         </div>
 
       </div>
+
+      {/* Modal de feedback */}
+      {feedbackTicket && (
+        <FeedbackModal
+          ticketId={feedbackTicket.id}
+          ticketNumber={feedbackTicket.num}
+          isOpen={!!feedbackTicket}
+          onClose={() => {
+            setFinishedTickets(prev => prev.filter(t => t.id !== feedbackTicket.id))
+            setFeedbackTicket(null)
+          }}
+        />
+      )}
 
     </div>
   )
