@@ -6,7 +6,7 @@ import { useEffect, useMemo, useState } from "react";
 import { Ticket } from "../type";
 import TicketComponent from "../components/TicketComponent";
 import Link from "next/link";
-import { Briefcase } from "lucide-react";
+import { Briefcase, Monitor, Copy, ExternalLink } from "lucide-react";
 
 type AssignedPost = {
   id: string
@@ -25,6 +25,8 @@ export default function Home() {
   const [userRole, setUserRole] = useState<'OWNER' | 'ADMIN' | 'STAFF' | null>(null)
   const [isRoleLoading, setIsRoleLoading] = useState(true)
   const [assignedPosts, setAssignedPosts] = useState<AssignedPost[]>([])
+  const [pageName, setPageName] = useState<string | null>(null)
+  const [displayUrlCopied, setDisplayUrlCopied] = useState(false)
   const TICKETS_PER_PAGE = 10
 
   const totalPages = Math.ceil(tickets.length / TICKETS_PER_PAGE)
@@ -56,9 +58,10 @@ export default function Home() {
     const fetchUserData = async () => {
       try {
         setIsRoleLoading(true)
-        const { role } = await initUserSession(email, user?.fullName ?? '')
+        const { role, pageName: pn } = await initUserSession(email, user?.fullName ?? '')
         
         setUserRole(role)
+        setPageName(pn)
         
         // Si STAFF, récupérer ses postes assignés
         if (role === 'STAFF') {
@@ -142,6 +145,52 @@ export default function Home() {
   // Vue par défaut pour OWNER/ADMIN : dashboard complet
   return (
     <Wrapper>
+
+      {/* Section Affichage Public TV */}
+      {pageName && (userRole === 'OWNER' || userRole === 'ADMIN') && (
+        <div className="card bg-base-200 mb-6">
+          <div className="card-body py-4">
+            <div className="flex items-center gap-2 mb-2">
+              <Monitor className="w-5 h-5 text-primary" />
+              <h2 className="font-bold text-lg">Affichage Public TV</h2>
+            </div>
+            <p className="text-sm text-base-content/60 mb-3">
+              Projetez cette URL sur un écran en salle d&apos;attente pour afficher les tickets en temps réel.
+            </p>
+            <div className="flex flex-col sm:flex-row gap-2">
+              <input
+                type="text"
+                value={`${typeof window !== 'undefined' ? window.location.origin : ''}/display/${pageName}`}
+                readOnly
+                className="input input-bordered input-sm flex-1 font-mono text-sm"
+                aria-label="URL d'affichage public"
+              />
+              <div className="flex gap-2">
+                <button
+                  onClick={() => {
+                    navigator.clipboard.writeText(`${window.location.origin}/display/${pageName}`)
+                    setDisplayUrlCopied(true)
+                    setTimeout(() => setDisplayUrlCopied(false), 2000)
+                  }}
+                  className="btn btn-sm btn-outline gap-1"
+                >
+                  <Copy className="w-4 h-4" />
+                  {displayUrlCopied ? 'Copié !' : 'Copier'}
+                </button>
+                <a
+                  href={`/display/${pageName}`}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="btn btn-sm btn-primary gap-1"
+                >
+                  <ExternalLink className="w-4 h-4" />
+                  Ouvrir
+                </a>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
 
       <div className="flex justify-between items-center mb-4">
         <h1 className="text-2xl font-bold">Tableau de bord - Tous les tickets</h1>

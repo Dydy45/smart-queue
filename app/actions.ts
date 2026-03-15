@@ -464,6 +464,78 @@ export async function getPendingTicketsByEmail(email:string) {
     }
 }
 
+/**
+ * Récupère les tickets pour l'affichage public TV.
+ * Route publique (pas d'authentification requise).
+ * Retourne uniquement les données nécessaires à l'affichage (pas de données sensibles).
+ */
+export async function getTicketsForDisplay(pageName: string) {
+    try {
+        const validatedPageName = pageNameSchema.parse(pageName)
+
+        const company = await prisma.company.findUnique({
+            where: { pageName: validatedPageName },
+            select: {
+                id: true,
+                name: true,
+                services: {
+                    include: {
+                        tickets: {
+                            where: {
+                                status: { in: ['CALL', 'IN_PROGRESS', 'PENDING'] }
+                            },
+                            orderBy: { createdAt: 'asc' },
+                            select: {
+                                id: true,
+                                num: true,
+                                status: true,
+                                createdAt: true,
+                                postName: true,
+                            }
+                        }
+                    }
+                }
+            }
+        })
+
+        if (!company) {
+            return null
+        }
+
+        const allTickets = company.services.flatMap((service) =>
+            service.tickets.map((ticket) => ({
+                ...ticket,
+                serviceName: service.name,
+                createdAt: ticket.createdAt.toISOString(),
+            }))
+        )
+
+        const callTickets = allTickets
+            .filter(t => t.status === 'CALL')
+            .sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime())
+
+        const inProgressTickets = allTickets
+            .filter(t => t.status === 'IN_PROGRESS')
+            .sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime())
+
+        const pendingTickets = allTickets
+            .filter(t => t.status === 'PENDING')
+            .sort((a, b) => new Date(a.createdAt).getTime() - new Date(b.createdAt).getTime())
+            .slice(0, 10)
+
+        return {
+            companyName: company.name,
+            callTickets,
+            inProgressTickets,
+            pendingTickets,
+            totalPending: allTickets.filter(t => t.status === 'PENDING').length,
+        }
+    } catch (error) {
+        console.error('[getTicketsForDisplay] Error:', error)
+        return null
+    }
+}
+
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 export async function getTicketsByIds(ticketNums : any[]) {
     try {
