@@ -114,3 +114,112 @@ export const feedbackSchema = z.object({
 })
 
 export type FeedbackInput = z.infer<typeof feedbackSchema>
+
+/**
+ * Appointment validation schema
+ * Used when creating a new appointment
+ */
+export const appointmentSchema = z.object({
+  serviceId: z.string().uuid('ID de service invalide'),
+  postId: z.string().uuid('ID de poste invalide').optional(),
+  clientName: z
+    .string()
+    .min(2, 'Le nom doit contenir au moins 2 caractères')
+    .max(100, 'Le nom ne peut pas dépasser 100 caractères')
+    .trim(),
+  clientEmail: z
+    .string()
+    .email('Email invalide')
+    .toLowerCase()
+    .optional()
+    .or(z.literal('')),
+  clientPhone: z
+    .string()
+    .max(20, 'Numéro trop long')
+    .optional()
+    .or(z.literal('')),
+  appointmentDate: z.string().datetime('Date de rendez-vous invalide'),
+  duration: z
+    .number()
+    .int('La durée doit être un nombre entier')
+    .min(5, 'La durée minimum est de 5 minutes')
+    .max(480, 'La durée maximum est de 8 heures'),
+  notes: z
+    .string()
+    .max(500, 'Les notes ne peuvent pas dépasser 500 caractères')
+    .trim()
+    .optional()
+    .or(z.literal('')),
+})
+
+export type AppointmentInput = z.infer<typeof appointmentSchema>
+
+/**
+ * Business hours validation schema
+ * Used when configuring weekly opening hours
+ */
+export const businessHoursSchema = z.object({
+  dayOfWeek: z
+    .number()
+    .int()
+    .min(0, 'Jour invalide (0=Dimanche)')
+    .max(6, 'Jour invalide (6=Samedi)'),
+  openTime: z
+    .string()
+    .regex(/^([01]\d|2[0-3]):[0-5]\d$/, 'Format horaire invalide (HH:mm)'),
+  closeTime: z
+    .string()
+    .regex(/^([01]\d|2[0-3]):[0-5]\d$/, 'Format horaire invalide (HH:mm)'),
+  isOpen: z.boolean(),
+})
+
+export type BusinessHoursInput = z.infer<typeof businessHoursSchema>
+
+/**
+ * Closed date validation schema
+ * Used when adding exceptional closing days
+ */
+export const closedDateSchema = z.object({
+  date: z
+    .string()
+    .regex(/^\d{4}-\d{2}-\d{2}$/, 'Format de date invalide (YYYY-MM-DD)'),
+  reason: z
+    .string()
+    .max(200, 'La raison ne peut pas dépasser 200 caractères')
+    .trim()
+    .optional()
+    .or(z.literal('')),
+})
+
+export type ClosedDateInput = z.infer<typeof closedDateSchema>
+
+/**
+ * Company theme validation schema
+ * Used when updating branding / visual identity
+ */
+export const themeSchema = z.object({
+  logoUrl: z
+    .string()
+    .url('URL de logo invalide')
+    .max(500, 'URL trop longue')
+    .optional()
+    .or(z.literal('')),
+  primaryColor: z
+    .string()
+    .regex(/^#([0-9A-Fa-f]{6})$/, 'Couleur invalide (format #RRGGBB)')
+    .optional()
+    .or(z.literal('')),
+  accentColor: z
+    .string()
+    .regex(/^#([0-9A-Fa-f]{6})$/, 'Couleur invalide (format #RRGGBB)')
+    .optional()
+    .or(z.literal('')),
+  description: z
+    .string()
+    .max(300, 'La description ne peut pas dépasser 300 caractères')
+    .trim()
+    .optional()
+    .or(z.literal('')),
+})
+
+export type ThemeInput = z.infer<typeof themeSchema>

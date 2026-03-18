@@ -34,7 +34,10 @@ const Navbar = () => {
             { href: "/poste_list", label: "Vos postes", roles: ['OWNER', 'ADMIN'] },
             { href: "/staff", label: "Gestion Staff", roles: ['OWNER'] },
             { href: "/dashboard", label: "Tableau de bord", roles: ['OWNER', 'ADMIN'] },
-            { href: "/feedbacks", label: "Feedbacks", roles: ['OWNER', 'ADMIN'] }
+            { href: "/feedbacks", label: "Feedbacks", roles: ['OWNER', 'ADMIN'] },
+            { href: "/appointments", label: "Rendez-vous", roles: ['OWNER', 'ADMIN'] },
+            { href: "/settings/business-hours", label: "Horaires", roles: ['OWNER', 'ADMIN'] },
+            { href: "/settings/theme", label: "Thème", roles: ['OWNER', 'ADMIN'] }
         ]
         
         // Si chargement ou rôle inconnu, n'afficher que les liens communs

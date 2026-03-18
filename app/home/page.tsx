@@ -6,7 +6,7 @@ import { useEffect, useMemo, useState } from "react";
 import { Ticket } from "../type";
 import TicketComponent from "../components/TicketComponent";
 import Link from "next/link";
-import { Briefcase, Monitor, Copy, ExternalLink } from "lucide-react";
+import { Briefcase, Monitor, Copy, ExternalLink, CalendarDays } from "lucide-react";
 
 type AssignedPost = {
   id: string
@@ -27,6 +27,7 @@ export default function Home() {
   const [assignedPosts, setAssignedPosts] = useState<AssignedPost[]>([])
   const [pageName, setPageName] = useState<string | null>(null)
   const [displayUrlCopied, setDisplayUrlCopied] = useState(false)
+  const [appointmentUrlCopied, setAppointmentUrlCopied] = useState(false)
   const TICKETS_PER_PAGE = 10
 
   const totalPages = Math.ceil(tickets.length / TICKETS_PER_PAGE)
@@ -179,6 +180,52 @@ export default function Home() {
                 </button>
                 <a
                   href={`/display/${pageName}`}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="btn btn-sm btn-primary gap-1"
+                >
+                  <ExternalLink className="w-4 h-4" />
+                  Ouvrir
+                </a>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Section Prise de Rendez-vous */}
+      {pageName && (userRole === 'OWNER' || userRole === 'ADMIN') && (
+        <div className="card bg-base-200 mb-6">
+          <div className="card-body py-4">
+            <div className="flex items-center gap-2 mb-2">
+              <CalendarDays className="w-5 h-5 text-primary" />
+              <h2 className="font-bold text-lg">Prise de Rendez-vous</h2>
+            </div>
+            <p className="text-sm text-base-content/60 mb-3">
+              Partagez cette URL pour permettre à vos clients de prendre rendez-vous en ligne.
+            </p>
+            <div className="flex flex-col sm:flex-row gap-2">
+              <input
+                type="text"
+                value={`${typeof window !== 'undefined' ? window.location.origin : ''}/appointment/${pageName}`}
+                readOnly
+                className="input input-bordered input-sm flex-1 font-mono text-sm"
+                aria-label="URL de prise de rendez-vous"
+              />
+              <div className="flex gap-2">
+                <button
+                  onClick={() => {
+                    navigator.clipboard.writeText(`${window.location.origin}/appointment/${pageName}`)
+                    setAppointmentUrlCopied(true)
+                    setTimeout(() => setAppointmentUrlCopied(false), 2000)
+                  }}
+                  className="btn btn-sm btn-outline gap-1"
+                >
+                  <Copy className="w-4 h-4" />
+                  {appointmentUrlCopied ? 'Copié !' : 'Copier'}
+                </button>
+                <a
+                  href={`/appointment/${pageName}`}
                   target="_blank"
                   rel="noopener noreferrer"
                   className="btn btn-sm btn-primary gap-1"

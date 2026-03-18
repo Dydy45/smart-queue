@@ -8,55 +8,66 @@ datasource db {
 }
 
 model Company {
-  id        String    @id @default(uuid())
-  name      String
-  email     String    @unique
-  pageName  String?   @unique
-  createdAt DateTime  @default(now())
-  posts     Post[]
-  services  Service[]
-  staff     Staff[]
-  feedbacks Feedback[]
+  id             String          @id @default(uuid())
+  name           String
+  email          String          @unique
+  pageName       String?         @unique
+  createdAt      DateTime        @default(now())
+  logoUrl        String?
+  primaryColor   String?
+  accentColor    String?
+  description    String?
+  posts          Post[]
+  services       Service[]
+  staff          Staff[]
+  feedbacks      Feedback[]
+  appointments   Appointment[]
+  businessHours  BusinessHours[]
+  closedDates    ClosedDate[]
 }
 
 model Service {
-  id        String   @id @default(uuid())
-  name      String
-  avgTime   Int
-  companyId String
-  company   Company  @relation(fields: [companyId], references: [id])
-  posts     Post[]
-  tickets   Ticket[]
+  id           String        @id @default(uuid())
+  name         String
+  avgTime      Int
+  companyId    String
+  company      Company       @relation(fields: [companyId], references: [id])
+  posts        Post[]
+  tickets      Ticket[]
+  appointments Appointment[]
 }
 
 model Post {
-  id            String   @id @default(uuid())
+  id            String        @id @default(uuid())
   name          String
   companyId     String
   serviceId     String
-  createdAt     DateTime @default(now())
-  company       Company  @relation(fields: [companyId], references: [id])
-  service       Service  @relation(fields: [serviceId], references: [id], onDelete: Cascade)
+  createdAt     DateTime      @default(now())
+  company       Company       @relation(fields: [companyId], references: [id])
+  service       Service       @relation(fields: [serviceId], references: [id], onDelete: Cascade)
   tickets       Ticket[]
   assignedStaff Staff[]
+  appointments  Appointment[]
 }
 
 model Ticket {
-  id                String   @id @default(uuid())
+  id                String       @id @default(uuid())
   serviceId         String
-  num               String   @unique
+  num               String       @unique
   nameComplete      String
-  status            String   @default("PENDING")
-  createdAt         DateTime @default(now())
+  status            String       @default("PENDING")
+  createdAt         DateTime     @default(now())
   postName          String?
   postId            String?
   phoneNumber       String?
-  whatsappConsent   Boolean  @default(false)
-  whatsappNotified  Boolean  @default(false)
+  whatsappConsent   Boolean      @default(false)
+  whatsappNotified  Boolean      @default(false)
   whatsappMessageId String?
-  post              Post?    @relation(fields: [postId], references: [id])
-  service           Service  @relation(fields: [serviceId], references: [id], onDelete: Cascade)
+  appointmentId     String?
+  post              Post?        @relation(fields: [postId], references: [id])
+  service           Service      @relation(fields: [serviceId], references: [id], onDelete: Cascade)
   feedback          Feedback?
+  appointment       Appointment? @relation(fields: [appointmentId], references: [id], onDelete: SetNull)
 }
 
 model Feedback {
@@ -76,6 +87,101 @@ model Feedback {
 enum Role {
   ADMIN
   STAFF
+}
+
+enum AppointmentStatus {
+  PENDING
+  CONFIRMED
+  CANCELLED
+  COMPLETED
+  NO_SHOW
+}
+
+enum ReminderType {
+  EMAIL
+  SMS
+  WHATSAPP
+}
+
+enum ReminderStatus {
+  PENDING
+  SENT
+  FAILED
+}
+
+model Appointment {
+  id              String            @id @default(uuid())
+  companyId       String
+  company         Company           @relation(fields: [companyId], references: [id], onDelete: Cascade)
+  serviceId       String
+  service         Service           @relation(fields: [serviceId], references: [id], onDelete: Cascade)
+  postId          String?
+  post            Post?             @relation(fields: [postId], references: [id], onDelete: SetNull)
+
+  clientName      String
+  clientEmail     String?
+  clientPhone     String?
+
+  appointmentDate DateTime
+  duration        Int
+
+  status          AppointmentStatus @default(PENDING)
+
+  notes           String?
+  cancelToken     String            @unique @default(uuid())
+  createdAt       DateTime          @default(now())
+  updatedAt       DateTime          @updatedAt
+  cancelledAt     DateTime?
+  cancelReason    String?
+
+  reminders       AppointmentReminder[]
+  tickets         Ticket[]
+
+  @@index([companyId])
+  @@index([serviceId])
+  @@index([appointmentDate])
+  @@index([status])
+}
+
+model AppointmentReminder {
+  id              String         @id @default(uuid())
+  appointmentId   String
+  appointment     Appointment    @relation(fields: [appointmentId], references: [id], onDelete: Cascade)
+
+  reminderType    ReminderType
+  sentAt          DateTime?
+  scheduledFor    DateTime
+  status          ReminderStatus @default(PENDING)
+
+  @@index([appointmentId])
+  @@index([scheduledFor])
+  @@index([status])
+}
+
+model BusinessHours {
+  id        String  @id @default(uuid())
+  companyId String
+  company   Company @relation(fields: [companyId], references: [id], onDelete: Cascade)
+
+  dayOfWeek Int
+  openTime  String
+  closeTime String
+  isOpen    Boolean @default(true)
+
+  @@unique([companyId, dayOfWeek])
+  @@index([companyId])
+}
+
+model ClosedDate {
+  id        String   @id @default(uuid())
+  companyId String
+  company   Company  @relation(fields: [companyId], references: [id], onDelete: Cascade)
+
+  date      DateTime @db.Date
+  reason    String?
+
+  @@index([companyId])
+  @@index([date])
 }
 
 model Staff {

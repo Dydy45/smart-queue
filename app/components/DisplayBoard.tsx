@@ -24,9 +24,12 @@ type DisplayData = {
 interface DisplayBoardProps {
   initialData: DisplayData
   pageName: string
+  companyName?: string | null
+  logoUrl?: string | null
+  primaryColor?: string | null
 }
 
-export default function DisplayBoard({ initialData, pageName }: DisplayBoardProps) {
+export default function DisplayBoard({ initialData, pageName, companyName: brandName, logoUrl, primaryColor }: DisplayBoardProps) {
   const [data, setData] = useState<DisplayData>(initialData)
   const [isConnected, setIsConnected] = useState(true)
   const [lastUpdate, setLastUpdate] = useState(new Date())
@@ -123,11 +126,19 @@ export default function DisplayBoard({ initialData, pageName }: DisplayBoardProp
       <audio ref={audioRef} src="/sounds/notification.wav" preload="auto" />
 
       {/* Header */}
-      <header className="bg-primary text-primary-content px-6 py-4 flex items-center justify-between shadow-lg">
+      <header
+        className="bg-primary text-primary-content px-6 py-4 flex items-center justify-between shadow-lg"
+        style={primaryColor ? { backgroundColor: primaryColor } : undefined}
+      >
         <div className="flex items-center gap-3">
-          <span className="text-3xl">🏢</span>
+          {logoUrl ? (
+            // eslint-disable-next-line @next/next/no-img-element
+            <img src={logoUrl} alt={brandName || data.companyName} className="h-10 w-auto object-contain rounded" />
+          ) : (
+            <span className="text-3xl">🏢</span>
+          )}
           <div>
-            <h1 className="text-2xl font-bold tracking-tight">{data.companyName}</h1>
+            <h1 className="text-2xl font-bold tracking-tight">{brandName || data.companyName}</h1>
             <p className="text-primary-content/70 text-sm">SmartQueue — File d&apos;attente</p>
           </div>
         </div>

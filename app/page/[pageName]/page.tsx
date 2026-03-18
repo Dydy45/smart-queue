@@ -4,6 +4,8 @@
 import { createTicket, getServicesByPageName, getTicketsByIds, getTicketsWithContext } from '@/app/actions'
 import TicketComponent from '@/app/components/TicketComponent'
 import FeedbackModal from '@/app/components/FeedbackModal'
+import CompanyThemeProvider from '@/app/components/CompanyThemeProvider'
+import { getCompanyTheme } from '@/app/actions/theme'
 import { Service } from '@/app/generated/prisma/client'
 import { Ticket } from '@/app/type'
 import { useToast } from '@/lib/useToast'
@@ -28,6 +30,7 @@ const page = ({ params }: { params: Promise<{ pageName: string }> }) => {
   const [currentPage, setCurrentPage] = useState(1)
   const [finishedTickets, setFinishedTickets] = useState<Ticket[]>([])
   const [feedbackTicket, setFeedbackTicket] = useState<Ticket | null>(null)
+  const [theme, setTheme] = useState<{ name: string; logoUrl: string | null; primaryColor: string; accentColor: string; description: string | null } | null>(null)
   const TICKETS_PER_PAGE = 5
 
   const totalPages = Math.ceil(tickets.length / TICKETS_PER_PAGE)
@@ -41,7 +44,11 @@ const page = ({ params }: { params: Promise<{ pageName: string }> }) => {
     try {
       const resolvedParams = await params
       setPageName(resolvedParams.pageName)
-      const servicesList = await getServicesByPageName(resolvedParams.pageName)
+      const [servicesList, themeData] = await Promise.all([
+        getServicesByPageName(resolvedParams.pageName),
+        getCompanyTheme(resolvedParams.pageName),
+      ])
+      if (themeData) setTheme(themeData)
       if (servicesList) {
         setServices(servicesList)
         showSuccess(`${servicesList.length} service(s) chargé(s) avec succès`)
@@ -171,6 +178,13 @@ const page = ({ params }: { params: Promise<{ pageName: string }> }) => {
 
   return (
     <div className='px-5 md:px-[10%] mt-8 mb-10'>
+      <CompanyThemeProvider
+        primaryColor={theme?.primaryColor}
+        accentColor={theme?.accentColor}
+        logoUrl={theme?.logoUrl}
+        companyName={theme?.name}
+        description={theme?.description}
+      >
 
       <div>
         <h1 className='text-2xl font-bold'>
@@ -358,6 +372,7 @@ const page = ({ params }: { params: Promise<{ pageName: string }> }) => {
         />
       )}
 
+      </CompanyThemeProvider>
     </div>
   )
 }
