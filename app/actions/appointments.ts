@@ -5,7 +5,7 @@ import { verifyStaffAccess } from '@/lib/auth'
 import { checkRateLimit, RateLimitError } from '@/lib/ratelimit'
 import { appointmentSchema, type AppointmentInput } from '@/lib/validation'
 import { pageNameSchema } from '@/lib/validation'
-import { generateTicketNumber } from '@/app/actions'
+import { generateTicketNumber } from '@/lib/ticket-utils'
 
 /**
  * Crée un nouveau rendez-vous.

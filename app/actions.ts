@@ -1,7 +1,7 @@
 "use server"
 
-import crypto from 'crypto'
 import prisma from '@/lib/prisma'
+import { generateTicketNumber } from '@/lib/ticket-utils'
 import { verifyCompanyOwnership, getCurrentUserEmail, verifyStaffAccess } from '@/lib/auth'
 import { checkRateLimit, rateLimitConfig, RateLimitError } from '@/lib/ratelimit'
 import {
@@ -12,18 +12,6 @@ import {
   avgTimeSchema,
   emailSchema
 } from '@/lib/validation'
-
-/**
- * Génère un numéro de ticket sécurisé en utilisant crypto
- * Format: T[timestamp en base 36][4 bytes aléatoires en base 36]
- * Exemple: T20250301A4K9L
- */
-export function generateTicketNumber(): string {
-  const date = Date.now().toString(36)
-  const random = crypto.getRandomValues(new Uint8Array(4))
-    .reduce((acc, byte) => acc + byte.toString(36), '')
-  return `T${date}${random}`.toUpperCase().substring(0, 10)
-}
 
 /**
  * Initialise la session utilisateur en une seule requête : vérifie/crée l'utilisateur, retourne son rôle et pageName
