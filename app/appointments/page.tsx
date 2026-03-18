@@ -1,13 +1,15 @@
 'use client'
 
 import { useEffect, useState } from 'react'
-import { Calendar, CheckCircle, XCircle, Clock, AlertTriangle, Users, Loader2 } from 'lucide-react'
+import { Calendar, CheckCircle, XCircle, Clock, AlertTriangle, Users, Loader2, UserCheck } from 'lucide-react'
 import Wrapper from '@/app/components/Wrapper'
 import {
   getAppointmentsByCompany,
   getAppointmentStats,
   confirmAppointment,
-  updateAppointmentStatus
+  updateAppointmentStatus,
+  checkInAppointment,
+  processNoShows,
 } from '@/app/actions/appointments'
 
 type AppointmentItem = {
@@ -75,6 +77,9 @@ export default function AppointmentsPage() {
 
       const statusFilter = filter !== 'all' ? filter : undefined
 
+      // Traiter automatiquement les NO_SHOW avant de charger les données
+      await processNoShows()
+
       const [aptsData, statsData] = await Promise.all([
         getAppointmentsByCompany(startDate, endDate, statusFilter),
         getAppointmentStats(),
@@ -108,6 +113,28 @@ export default function AppointmentsPage() {
     if (!result.success) setError(result.error || 'Erreur')
     await loadData()
     setActionLoading(null)
+  }
+
+  const handleCheckIn = async (id: string) => {
+    setActionLoading(id)
+    const result = await checkInAppointment(id)
+    if (result.success) {
+      setError(null)
+    } else {
+      setError(result.error || 'Erreur lors du check-in')
+    }
+    await loadData()
+    setActionLoading(null)
+  }
+
+  /**
+   * Détermine si le bouton check-in doit être affiché.
+   * Fenêtre : ±30 min autour de l'heure du RDV.
+   */
+  const isCheckInWindow = (aptDate: Date): boolean => {
+    const now = new Date()
+    const diffMin = (now.getTime() - aptDate.getTime()) / (60 * 1000)
+    return diffMin >= -30 && diffMin <= 30
   }
 
   if (isLoading && !stats) {
@@ -247,6 +274,16 @@ export default function AppointmentsPage() {
                               ✕ Annuler
                             </button>
                           </>
+                        )}
+                        {apt.status === 'CONFIRMED' && isCheckInWindow(aptDate) && (
+                          <button
+                            onClick={() => handleCheckIn(apt.id)}
+                            className="btn btn-primary btn-sm gap-1"
+                            title="Créer un ticket prioritaire pour ce client"
+                          >
+                            <UserCheck className="w-4 h-4" />
+                            Check-in
+                          </button>
                         )}
                         {apt.status === 'CONFIRMED' && isPast && (
                           <>

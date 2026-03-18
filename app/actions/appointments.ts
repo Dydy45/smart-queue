@@ -5,6 +5,7 @@ import { verifyStaffAccess } from '@/lib/auth'
 import { checkRateLimit, RateLimitError } from '@/lib/ratelimit'
 import { appointmentSchema, type AppointmentInput } from '@/lib/validation'
 import { pageNameSchema } from '@/lib/validation'
+import { generateTicketNumber } from '@/app/actions'
 
 /**
  * Crée un nouveau rendez-vous.
@@ -480,6 +481,193 @@ export async function updateAppointmentStatus(
   } catch (error) {
     console.error('[updateAppointmentStatus] Erreur:', error)
     return { success: false, error: 'Une erreur est survenue' }
+  }
+}
+
+/**
+ * Check-in d'un rendez-vous : crée un ticket prioritaire lié au RDV.
+ * Le client avec RDV est inséré en tête de file (priority = APPOINTMENT).
+ * 
+ * Sécurité : OWNER/ADMIN uniquement, vérification que le RDV appartient à l'entreprise.
+ * Règles métier :
+ *  - Le RDV doit être CONFIRMED
+ *  - L'heure actuelle doit être dans une fenêtre de ±30 min autour de l'heure du RDV
+ *  - Un seul ticket peut être créé par RDV (appointmentId @unique)
+ */
+export async function checkInAppointment(
+  appointmentId: string
+): Promise<{ success: boolean; ticketNum?: string; error?: string }> {
+  try {
+    const access = await verifyStaffAccess()
+    if (access.role === 'STAFF') {
+      return { success: false, error: 'Accès réservé aux OWNER/ADMIN' }
+    }
+
+    const appointment = await prisma.appointment.findUnique({
+      where: { id: appointmentId },
+      include: {
+        service: { select: { id: true, name: true, avgTime: true } },
+        tickets: { select: { id: true } },
+      }
+    })
+
+    if (!appointment || appointment.companyId !== access.companyId) {
+      return { success: false, error: 'Rendez-vous introuvable' }
+    }
+
+    if (appointment.status !== 'CONFIRMED') {
+      return { success: false, error: `Impossible de faire le check-in d'un rendez-vous ${appointment.status}. Le RDV doit être confirmé.` }
+    }
+
+    // Vérifier qu'aucun ticket n'est déjà lié à ce RDV
+    if (appointment.tickets.length > 0) {
+      return { success: false, error: 'Un ticket existe déjà pour ce rendez-vous' }
+    }
+
+    // Vérifier la fenêtre de temps (±30 min autour de l'heure du RDV)
+    const now = new Date()
+    const aptTime = new Date(appointment.appointmentDate)
+    const diffMinutes = (now.getTime() - aptTime.getTime()) / (60 * 1000)
+
+    if (diffMinutes < -30) {
+      const minutesUntil = Math.ceil(Math.abs(diffMinutes) - 30)
+      return { success: false, error: `Le check-in sera disponible dans ${minutesUntil} min (30 min avant le RDV)` }
+    }
+
+    if (diffMinutes > 30) {
+      return { success: false, error: 'La fenêtre de check-in est dépassée (±30 min). Marquez le RDV comme absent si nécessaire.' }
+    }
+
+    // Créer le ticket prioritaire
+    const ticketNum = generateTicketNumber()
+    await prisma.ticket.create({
+      data: {
+        serviceId: appointment.serviceId,
+        num: ticketNum,
+        nameComplete: appointment.clientName,
+        status: 'PENDING',
+        priority: 'APPOINTMENT',
+        appointmentId: appointment.id,
+        phoneNumber: appointment.clientPhone || null,
+        whatsappConsent: false,
+      }
+    })
+
+    // Mettre à jour le statut du RDV
+    await prisma.appointment.update({
+      where: { id: appointmentId },
+      data: { status: 'COMPLETED' }
+    })
+
+    return { success: true, ticketNum }
+  } catch (error) {
+    console.error('[checkInAppointment] Erreur:', error)
+    return { success: false, error: 'Une erreur est survenue lors du check-in' }
+  }
+}
+
+/**
+ * Détecte et marque automatiquement les RDV NO_SHOW.
+ * Un RDV est considéré NO_SHOW si :
+ *  - Son statut est CONFIRMED
+ *  - L'heure du RDV est dépassée de plus de 15 min
+ *  - Aucun ticket n'a été créé (pas de check-in)
+ * 
+ * Appelé automatiquement lors du chargement du dashboard /appointments.
+ * Sécurité : OWNER/ADMIN uniquement.
+ */
+export async function processNoShows(): Promise<{ processed: number }> {
+  try {
+    const access = await verifyStaffAccess()
+    if (access.role === 'STAFF') {
+      return { processed: 0 }
+    }
+
+    const now = new Date()
+    const threshold = new Date(now.getTime() - 15 * 60 * 1000) // 15 min dans le passé
+
+    // Trouver les RDV CONFIRMED dont l'heure est dépassée de >15 min
+    // et qui n'ont aucun ticket associé (pas de check-in)
+    const overdueAppointments = await prisma.appointment.findMany({
+      where: {
+        companyId: access.companyId,
+        status: 'CONFIRMED',
+        appointmentDate: { lt: threshold },
+        tickets: { none: {} },
+      },
+      select: { id: true }
+    })
+
+    if (overdueAppointments.length === 0) {
+      return { processed: 0 }
+    }
+
+    // Mettre à jour tous les RDV en NO_SHOW
+    await prisma.appointment.updateMany({
+      where: {
+        id: { in: overdueAppointments.map((a) => a.id) }
+      },
+      data: { status: 'NO_SHOW' }
+    })
+
+    console.log(`[processNoShows] ${overdueAppointments.length} RDV marqués NO_SHOW`)
+    return { processed: overdueAppointments.length }
+  } catch (error) {
+    console.error('[processNoShows] Erreur:', error)
+    return { processed: 0 }
+  }
+}
+
+/**
+ * Récupère les RDV du jour qui ont un créneau proche pour affichage dans la vue poste.
+ * Permet au staff de voir les RDV à venir dans la file d'attente.
+ * Sécurité : OWNER/ADMIN/STAFF authentifié.
+ */
+export async function getTodayAppointments(): Promise<{
+  upcoming: Array<{
+    id: string
+    clientName: string
+    appointmentDate: string
+    duration: number
+    serviceName: string
+    status: string
+    hasTicket: boolean
+  }>
+}> {
+  try {
+    const access = await verifyStaffAccess()
+
+    const now = new Date()
+    const todayStart = new Date(now.getFullYear(), now.getMonth(), now.getDate())
+    const todayEnd = new Date(todayStart.getTime() + 24 * 60 * 60 * 1000)
+
+    const appointments = await prisma.appointment.findMany({
+      where: {
+        companyId: access.companyId,
+        appointmentDate: { gte: todayStart, lt: todayEnd },
+        status: { in: ['PENDING', 'CONFIRMED'] },
+      },
+      include: {
+        service: { select: { name: true } },
+        tickets: { select: { id: true } },
+      },
+      orderBy: { appointmentDate: 'asc' }
+    })
+
+    return {
+      upcoming: appointments.map((apt) => ({
+        id: apt.id,
+        clientName: apt.clientName,
+        appointmentDate: apt.appointmentDate.toISOString(),
+        duration: apt.duration,
+        serviceName: apt.service.name,
+        status: apt.status,
+        hasTicket: apt.tickets.length > 0,
+      }))
+    }
+  } catch (error) {
+    console.error('[getTodayAppointments] Erreur:', error)
+    return { upcoming: [] }
   }
 }
 

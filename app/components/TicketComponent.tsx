@@ -67,6 +67,9 @@ const TicketComponent: React.FC<TicketComponentProps> = ({ ticket, index, totalW
                 <span className='text-lg font-semibold text-gray-500 badge'>
                     #{ticket.num}
                 </span>
+                {ticket.priority === 'APPOINTMENT' && (
+                    <span className='badge badge-primary badge-outline ml-2 gap-1'>📅 RDV</span>
+                )}
                 <span className='font-bold text-xl'>
                     <span className='ml-2'>
                         {ticket?.serviceName}

@@ -18,7 +18,7 @@ import {
  * Format: T[timestamp en base 36][4 bytes aléatoires en base 36]
  * Exemple: T20250301A4K9L
  */
-function generateTicketNumber(): string {
+export function generateTicketNumber(): string {
   const date = Date.now().toString(36)
   const random = crypto.getRandomValues(new Uint8Array(4))
     .reduce((acc, byte) => acc + byte.toString(36), '')
@@ -739,7 +739,16 @@ export async function getLastTicketByEmail(email: string, idPoste: string) {
 
         }
 
+        // Priorité : chercher d'abord un ticket APPOINTMENT, sinon NORMAL (FIFO)
         const ticket = await prisma.ticket.findFirst({
+            where: {
+                status: "PENDING",
+                priority: "APPOINTMENT",
+                service: { company: { id: accessInfo.companyId } }
+            },
+            orderBy: { createdAt: "asc" },
+            include: { service: true, post: true }
+        }) ?? await prisma.ticket.findFirst({
             where: {
                 status: "PENDING",
                 service: { company: { id: accessInfo.companyId } }

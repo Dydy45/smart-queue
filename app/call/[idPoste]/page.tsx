@@ -163,7 +163,12 @@ const page = ({ params }: { params: Promise<{ idPoste: string }> }) => {
                                     <p className='text-xs text-base-content/50 uppercase tracking-widest mb-1'>Ticket actuel</p>
                                     <h2 className='text-3xl font-black text-primary tracking-tight'>{ticket.num}</h2>
                                 </div>
-                                <span className={`badge badge-lg ${statusStyle?.badgeClass}`}>{statusStyle?.label}</span>
+                                <div className='flex items-center gap-2'>
+                                    {ticket.priority === 'APPOINTMENT' && (
+                                        <span className='badge badge-lg badge-primary gap-1'>📅 RDV</span>
+                                    )}
+                                    <span className={`badge badge-lg ${statusStyle?.badgeClass}`}>{statusStyle?.label}</span>
+                                </div>
                             </div>
                             <div className='divider my-2'></div>
                             <div className='grid grid-cols-2 gap-4'>

@@ -51,19 +51,20 @@ model Post {
 }
 
 model Ticket {
-  id                String       @id @default(uuid())
+  id                String         @id @default(uuid())
   serviceId         String
-  num               String       @unique
+  num               String         @unique
   nameComplete      String
-  status            String       @default("PENDING")
-  createdAt         DateTime     @default(now())
+  status            String         @default("PENDING")
+  priority          TicketPriority @default(NORMAL)
+  createdAt         DateTime       @default(now())
   postName          String?
   postId            String?
   phoneNumber       String?
-  whatsappConsent   Boolean      @default(false)
-  whatsappNotified  Boolean      @default(false)
+  whatsappConsent   Boolean        @default(false)
+  whatsappNotified  Boolean        @default(false)
   whatsappMessageId String?
-  appointmentId     String?
+  appointmentId     String?        @unique
   post              Post?        @relation(fields: [postId], references: [id])
   service           Service      @relation(fields: [serviceId], references: [id], onDelete: Cascade)
   feedback          Feedback?
@@ -95,6 +96,11 @@ enum AppointmentStatus {
   CANCELLED
   COMPLETED
   NO_SHOW
+}
+
+enum TicketPriority {
+  NORMAL
+  APPOINTMENT
 }
 
 enum ReminderType {
