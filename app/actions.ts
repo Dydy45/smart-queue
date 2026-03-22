@@ -445,7 +445,23 @@ export async function getPendingTicketsByEmail(email:string) {
             (a,b) => new Date(a.createdAt).getTime() - new Date(b.createdAt).getTime()
         )
 
-        return pendingTickets
+        // Enrichir les tickets PENDING avec les estimations ML
+        const { getEstimatedWaitTime } = await import('@/lib/wait-time-estimator')
+        const pendingOnly = pendingTickets.filter(t => t.status === 'PENDING')
+        const enrichedTickets = await Promise.all(
+            pendingTickets.map(async (ticket) => {
+                if (ticket.status !== 'PENDING') return ticket
+                const position = pendingOnly.findIndex(t => t.id === ticket.id) + 1
+                try {
+                    const estimate = await getEstimatedWaitTime(ticket.serviceId, accessInfo.companyId, position)
+                    return { ...ticket, estimatedWait: estimate.minutes, confidence: estimate.confidence }
+                } catch {
+                    return ticket
+                }
+            })
+        )
+
+        return enrichedTickets
 
     } catch (error) {
         console.error(error)
@@ -760,6 +776,7 @@ export async function getLastTicketByEmail(email: string, idPoste: string) {
             where: { id: ticket.id },
             data: {
                 status: "CALL",
+                calledAt: new Date(),
                 postId: post.id,
                 postName: post.name
             },
@@ -808,7 +825,12 @@ export async function updateTicketStatus(ticketId: string, newStatus: string) {
 
         const updatedTicket = await prisma.ticket.update({
             where: { id: ticketId },
-            data: { status: newStatus },
+            data: {
+                status: newStatus,
+                ...(newStatus === 'CALL' && { calledAt: new Date() }),
+                ...(newStatus === 'IN_PROGRESS' && { startedAt: new Date() }),
+                ...(newStatus === 'FINISHED' && { finishedAt: new Date() }),
+            },
             select: { id: true, serviceId: true, status: true }
         })
 
@@ -969,8 +991,25 @@ export async function getTicketsWithContext(ticketNums: string[], pageName: stri
             avgTime: ticket.service.avgTime
         }))
 
+        // 6. Enrichir les tickets PENDING du client avec les estimations ML
+        const { getEstimatedWaitTime } = await import('@/lib/wait-time-estimator')
+        const allPendingOnly = enrichedAllTickets.filter(t => t.status === 'PENDING')
+        const enrichedWithML = await Promise.all(
+            enrichedClientTickets.map(async (ticket) => {
+                if (ticket.status !== 'PENDING') return ticket
+                const position = allPendingOnly.findIndex(t => t.id === ticket.id) + 1
+                if (position <= 0) return ticket
+                try {
+                    const estimate = await getEstimatedWaitTime(ticket.serviceId, company.id, position)
+                    return { ...ticket, estimatedWait: estimate.minutes, confidence: estimate.confidence }
+                } catch {
+                    return ticket
+                }
+            })
+        )
+
         return {
-            clientTickets: enrichedClientTickets,
+            clientTickets: enrichedWithML,
             allTickets: enrichedAllTickets
         }
 

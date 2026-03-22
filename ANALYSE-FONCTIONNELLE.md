@@ -1,8 +1,8 @@
 # 📋 Analyse Fonctionnelle Complète — SmartQueue
 
-**Version** : 1.1  
+**Version** : 1.2  
 **Date** : 18 mars 2026  
-**Dernière mise à jour** : 18 mars 2026
+**Dernière mise à jour** : 22 mars 2026
 
 ---
 
@@ -19,14 +19,15 @@
 9. [Système de tickets — Flux complet](#9--système-de-tickets--flux-complet)
 10. [Système de rendez-vous — Flux complet](#10--système-de-rendez-vous--flux-complet)
 11. [Système hybride Tickets/RDV — Coexistence](#11--système-hybride-ticketsrdv--coexistence)
-12. [Système de feedback](#12--système-de-feedback)
-13. [Notifications WhatsApp](#13--notifications-whatsapp)
-14. [Affichage public TV](#14--affichage-public-tv)
-15. [Thème personnalisable](#15--thème-personnalisable)
-16. [Sécurité](#16--sécurité)
-17. [Routes et middleware](#17--routes-et-middleware)
-18. [Arborescence des pages](#18--arborescence-des-pages)
-19. [Diagrammes de flux](#19--diagrammes-de-flux)
+12. [Estimation Intelligente (ML)](#12--estimation-intelligente-ml)
+13. [Système de feedback](#13--système-de-feedback)
+14. [Notifications WhatsApp](#14--notifications-whatsapp)
+15. [Affichage public TV](#15--affichage-public-tv)
+16. [Thème personnalisable](#16--thème-personnalisable)
+17. [Sécurité](#17--sécurité)
+18. [Routes et middleware](#18--routes-et-middleware)
+19. [Arborescence des pages](#19--arborescence-des-pages)
+20. [Diagrammes de flux](#20--diagrammes-de-flux)
 
 ---
 
@@ -754,7 +755,84 @@ CLIENT arrive                    OWNER/ADMIN                         SYSTÈME
 
 ---
 
-## 12 — Système de feedback
+## 12 — Estimation Intelligente (ML)
+
+### Problème résolu
+
+L'estimation du temps d'attente était **statique** : `position × service.avgTime` (valeur configurée manuellement par l'OWNER). Aucune donnée réelle n'était exploitée, l'estimation ne s'améliorait jamais.
+
+### Solution : EWMA contextuel (Exponentially Weighted Moving Average)
+
+Algorithme 100% TypeScript (zéro dépendance ML externe) qui s'auto-améliore avec l'historique réel des tickets.
+
+#### Cycle de vie d'un ticket (timestamps trackés)
+
+```
+PENDING ──→ CALL ──→ IN_PROGRESS ──→ FINISHED
+   │         │          │               │
+createdAt  calledAt  startedAt     finishedAt
+   │         │          │               │
+   ├─────────┤          ├───────────────┤
+   waitDuration       serviceDuration
+```
+
+#### Algorithme de prédiction
+
+```
+estimatedServiceTime = α × recentAvg + (1-α) × historicalAvg
+  où α = 0.7 (poids fort sur les données récentes)
+
+estimatedWaitTime = (queuePosition / activePostsCount) × estimatedServiceTime
+  + marge file longue (+10% si > 10 tickets)
+  + marge heure de pointe (+15% si détectée)
+```
+
+#### Niveaux de confiance (fallback progressif)
+
+| Données historiques | Stratégie | Confiance | Badge |
+|---------------------|-----------|-----------|-------|
+| 0 tickets FINISHED | `service.avgTime` (statique) | Aucune | — |
+| 1-9 tickets | Moyenne simple | Faible | `~` |
+| 10-49 tickets | EWMA sans contexte horaire | Moyenne | `ML` jaune |
+| 50+ tickets | EWMA + contexte heure/jour | Élevée | `ML` vert |
+
+#### Features contextuelles utilisées
+
+| Feature | Description |
+|---------|-------------|
+| `serviceDuration` historique | Durée réelle CALL→FINISHED par service |
+| `hourOfDay` | Heure courante (±1h) pour détecter les patterns |
+| `dayOfWeek` | Jour de la semaine (même jour = même pattern) |
+| `activePostsCount` | Nombre de postes avec ticket IN_PROGRESS |
+| `queueLength` | Taille de la file (marge si > 10) |
+| Heures de pointe | Détectées quand volume > 130% de la moyenne |
+
+### Intégration dans les vues
+
+- **TicketComponent** : affiche l'estimation ML + badge de confiance au lieu du calcul statique
+- **Page client `/page/{pageName}`** : tickets enrichis avec `estimatedWait` et `confidence`
+- **Vue staff `/poste` et `/home`** : estimations ML visibles sur chaque ticket PENDING
+- **Notifications WhatsApp** : utilise l'estimation ML (fallback vers `position × avgTime`)
+
+### Dashboard de précision (`/estimation`)
+
+Page réservée OWNER/ADMIN affichant :
+- **Précision globale** : % de précision moyen pondéré
+- **Tableau par service** : avgTime configuré vs durée réelle vs estimation ML, écart, confiance, échantillons
+- **Heures de pointe** : détectées automatiquement par service
+- **Bouton "Sync"** : met à jour le `avgTime` d'un service avec la durée réelle mesurée
+
+### Fichiers clés
+
+| Fichier | Rôle |
+|---------|------|
+| `lib/wait-time-estimator.ts` | Moteur EWMA (estimation, précision, détection heures de pointe) |
+| `app/actions/estimation.ts` | Actions serveur (dashboard, sync avgTime, estimation publique) |
+| `app/estimation/page.tsx` | Dashboard de précision (OWNER/ADMIN) |
+
+---
+
+## 13 — Système de feedback
 
 ### Flux
 
@@ -775,7 +853,7 @@ CLIENT arrive                    OWNER/ADMIN                         SYSTÈME
 
 ---
 
-## 13 — Notifications WhatsApp
+## 14 — Notifications WhatsApp
 
 ### Configuration
 
@@ -799,7 +877,7 @@ Variables d'environnement requises :
 
 ---
 
-## 14 — Affichage public TV
+## 15 — Affichage public TV
 
 ### URL : `/display/{pageName}`
 
@@ -817,7 +895,7 @@ Variables d'environnement requises :
 
 ---
 
-## 15 — Thème personnalisable
+## 16 — Thème personnalisable
 
 ### Champs disponibles
 
@@ -845,7 +923,7 @@ Le composant `CompanyThemeProvider` :
 
 ---
 
-## 16 — Sécurité
+## 17 — Sécurité
 
 ### Authentification
 
@@ -897,7 +975,7 @@ Système en mémoire (`lib/ratelimit.ts`) avec fenêtre glissante :
 
 ---
 
-## 17 — Routes et middleware
+## 18 — Routes et middleware
 
 ### Middleware (`proxy.ts`)
 
@@ -938,12 +1016,13 @@ Toute route **non listée** nécessite une authentification Clerk (`auth.protect
 | `/dashboard` | Page | ✅ | OWNER/ADMIN | Statistiques tickets |
 | `/feedbacks` | Page | ✅ | OWNER/ADMIN | Statistiques feedbacks |
 | `/appointments` | Page | ✅ | OWNER/ADMIN | Dashboard rendez-vous |
+| `/estimation` | Page | ✅ | OWNER/ADMIN | Estimations ML (précision, sync avgTime) |
 | `/settings/business-hours` | Page | ✅ | OWNER/ADMIN | Configuration horaires |
 | `/settings/theme` | Page | ✅ | OWNER/ADMIN | Personnalisation visuelle |
 
 ---
 
-## 18 — Arborescence des pages
+## 19 — Arborescence des pages
 
 ```
 /                               ← Landing page (public)
@@ -970,6 +1049,7 @@ Toute route **non listée** nécessite une authentification Clerk (`auth.protect
 ├── /dashboard                  ← [OWNER/ADMIN] Statistiques tickets
 ├── /feedbacks                  ← [OWNER/ADMIN] Statistiques feedbacks
 ├── /appointments               ← [OWNER/ADMIN] Dashboard rendez-vous
+├── /estimation                 ← [OWNER/ADMIN] Estimations ML
 │
 └── /settings/
     ├── business-hours          ← [OWNER/ADMIN] Configuration horaires
@@ -978,9 +1058,9 @@ Toute route **non listée** nécessite une authentification Clerk (`auth.protect
 
 ---
 
-## 19 — Diagrammes de flux
+## 20 — Diagrammes de flux
 
-### 19.1 — Flux d'authentification et détermination du rôle
+### 20.1 — Flux d'authentification et détermination du rôle
 
 ```
 Utilisateur se connecte via Clerk
@@ -999,7 +1079,7 @@ Utilisateur se connecte via Clerk
          └── Sinon → Créer Company → rôle = OWNER
 ```
 
-### 19.2 — Flux d'appel d'un ticket (Staff)
+### 20.2 — Flux d'appel d'un ticket (Staff)
 
 ```
 Staff clique "Appeler le suivant"
@@ -1032,7 +1112,7 @@ Staff clique "Appeler le suivant"
                     (badge 📅 RDV si priority = APPOINTMENT)
 ```
 
-### 19.3 — Flux de calcul des créneaux disponibles
+### 20.3 — Flux de calcul des créneaux disponibles
 
 ```
 getAvailableSlots(pageName, serviceId, dateStr)

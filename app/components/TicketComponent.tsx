@@ -23,13 +23,28 @@ const getStatusBadge = (status: string) => {
     }
 }
 
-
+const getConfidenceBadge = (confidence?: 'none' | 'low' | 'medium' | 'high') => {
+    switch (confidence) {
+        case 'high':
+            return <span className='badge badge-success badge-xs ml-1' title='Estimation fiable (50+ tickets)'>ML</span>
+        case 'medium':
+            return <span className='badge badge-warning badge-xs ml-1' title='Estimation moyenne (10-49 tickets)'>ML</span>
+        case 'low':
+            return <span className='badge badge-error badge-outline badge-xs ml-1' title='Peu de données (1-9 tickets)'>~</span>
+        default:
+            return null
+    }
+}
 
 // eslint-disable-next-line @typescript-eslint/no-unused-vars
 const TicketComponent: React.FC<TicketComponentProps> = ({ ticket, index, totalWaitTime = 0 }) => {
 
-    const totalHours = Math.floor(totalWaitTime / 60)
-    const totalMinutes = totalWaitTime % 60
+    // Utiliser l'estimation ML si disponible, sinon fallback vers le calcul statique
+    const effectiveWaitTime = ticket.estimatedWait ?? totalWaitTime
+    const isMLEstimation = ticket.estimatedWait !== undefined && ticket.estimatedWait !== null
+
+    const totalHours = Math.floor(effectiveWaitTime / 60)
+    const totalMinutes = effectiveWaitTime % 60
     const formattedTotalWaitTime = `${totalHours}h ${totalMinutes}min`
 
     const [waitTimeStatus, setWaitTimeStatus] = useState("success")
@@ -48,17 +63,16 @@ const TicketComponent: React.FC<TicketComponentProps> = ({ ticket, index, totalW
         // eslint-disable-next-line react-hooks/set-state-in-effect
         setFormattedRealWaitTime(`${hours}h ${minutes}min`)
 
-        if (totalWaitTime !== 0) {
-            if (waitTimeInMinutes > totalWaitTime) {
+        if (effectiveWaitTime !== 0) {
+            if (waitTimeInMinutes > effectiveWaitTime) {
                 setWaitTimeStatus("error")
             } else {
                 setWaitTimeStatus("success")
             }
         }
 
-    }, [ticket,totalWaitTime])
-
-
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+    }, [ticket, effectiveWaitTime])
 
     return (
         <div className='border p-5 border-base-300 rounded-xl flex flex-col space-y-2'>
@@ -101,9 +115,11 @@ const TicketComponent: React.FC<TicketComponentProps> = ({ ticket, index, totalW
                     <span className='badge badge-warning badge-outline'>Attente</span>
                     <ul className="timeline timeline-vertical lg:timeline-horizontal w-full">
 
-                        {totalWaitTime !== 0 && (
+                        {effectiveWaitTime !== 0 && (
                             <li>
-                                <div className="timeline-start">Estimé</div>
+                                <div className="timeline-start">
+                                    Estimé{isMLEstimation && getConfidenceBadge(ticket.confidence)}
+                                </div>
                                 <div className="timeline-middle">
                                     <svg
                                         xmlns="http://www.w3.org/2000/svg"

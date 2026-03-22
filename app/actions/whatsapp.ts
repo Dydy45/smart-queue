@@ -53,7 +53,20 @@ export async function checkAndNotifyUpcomingTickets(serviceId: string) {
         !ticket.whatsappNotified
       ) {
         const position = pendingTickets.findIndex((t) => t.id === ticket.id) + 1
-        const estimatedTime = position * service.avgTime
+        // Utiliser l'estimation ML si possible, sinon fallback vers position × avgTime
+        let estimatedTime = position * service.avgTime
+        try {
+          const { getEstimatedWaitTime } = await import('@/lib/wait-time-estimator')
+          const serviceRecord = await prisma.service.findUnique({ where: { id: serviceId }, select: { companyId: true } })
+          if (serviceRecord) {
+            const mlEstimate = await getEstimatedWaitTime(serviceId, serviceRecord.companyId, position)
+            if (mlEstimate.confidence !== 'none') {
+              estimatedTime = mlEstimate.minutes
+            }
+          }
+        } catch {
+          // Fallback silencieux vers le calcul statique
+        }
 
         const result = await sendWhatsAppMessage(
           ticket.phoneNumber,

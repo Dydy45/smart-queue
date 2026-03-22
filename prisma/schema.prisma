@@ -58,6 +58,9 @@ model Ticket {
   status            String         @default("PENDING")
   priority          TicketPriority @default(NORMAL)
   createdAt         DateTime       @default(now())
+  calledAt          DateTime?
+  startedAt         DateTime?
+  finishedAt        DateTime?
   postName          String?
   postId            String?
   phoneNumber       String?
