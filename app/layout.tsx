@@ -48,8 +48,8 @@ export default function RootLayout({
     <ClerkProvider
       signInUrl="/sign-in"
       signUpUrl="/sign-up"
-      afterSignInUrl="/home"
-      afterSignUpUrl="/home"
+      signInFallbackRedirectUrl="/home"
+      signUpFallbackRedirectUrl="/home"
     >
       <ToastProvider>
         <html lang="en" data-theme="valentine">
