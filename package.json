@@ -14,9 +14,9 @@
   },
   "dependencies": {
     "@clerk/nextjs": "^6.37.0",
-    "@prisma/adapter-better-sqlite3": "^7.3.0",
-    "@prisma/adapter-pg": "^7.4.2",
-    "@prisma/client": "^7.3.0",
+    "@prisma/adapter-better-sqlite3": "^6.19.2",
+    "@prisma/adapter-pg": "^6.19.2",
+    "@prisma/client": "^6.19.2",
     "@upstash/ratelimit": "^2.0.8",
     "@upstash/redis": "^1.36.3",
     "libphonenumber-js": "^1.12.40",
