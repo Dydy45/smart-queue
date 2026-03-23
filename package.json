@@ -5,7 +5,7 @@
   "scripts": {
     "dev": "next dev",
     "socket-server": "tsx server.js",
-    "build": "next build",
+    "build": "prisma generate && next build",
     "start": "next start",
     "lint": "eslint",
     "video:preview": "remotion studio remotion-video/index.ts",
