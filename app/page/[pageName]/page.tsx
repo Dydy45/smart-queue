@@ -6,7 +6,7 @@ import TicketComponent from '@/app/components/TicketComponent'
 import FeedbackModal from '@/app/components/FeedbackModal'
 import CompanyThemeProvider from '@/app/components/CompanyThemeProvider'
 import { getCompanyTheme } from '@/app/actions/theme'
-import { Service } from '@/app/generated/prisma/client'
+import { Service } from '@/app/generated/prisma'
 import { Ticket } from '@/app/type'
 import { useToast } from '@/lib/useToast'
 

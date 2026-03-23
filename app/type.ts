@@ -1,4 +1,4 @@
-import { Ticket as TicketCompany } from "../app/generated/prisma/client";
+import { Ticket as TicketCompany } from "./generated/prisma";
 
 export type Ticket = TicketCompany & {
     serviceName : string ;

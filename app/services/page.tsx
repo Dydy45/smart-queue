@@ -4,7 +4,7 @@ import React, { useEffect, useState } from 'react'
 import Wrapper from '../components/Wrapper'
 import { useUser } from '@clerk/nextjs'
 import { createService, deleteServiceById, getServiceByEmail } from '../actions'
-import { Service } from '../generated/prisma/browser'
+import { Service } from '../generated/prisma'
 import { Clock2, ClockArrowUp, Trash } from 'lucide-react'
 import EmptyState from '../components/EmptyState'
 
