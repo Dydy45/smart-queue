@@ -79,13 +79,16 @@ export function validatePhoneNumber(phone: string): {
 
 // ===== Templates de messages =====
 
-export type WhatsAppTemplate = 'ticket_approaching' | 'ticket_called'
+export type WhatsAppTemplate = 'ticket_approaching' | 'ticket_called' | 'virtual_depart' | 'virtual_arrived'
 
 interface TemplateParams {
   ticketNumber: string
   serviceName?: string
   estimatedTime?: number
   postName?: string
+  companyName?: string
+  trackingUrl?: string
+  position?: number
 }
 
 function buildMessage(template: WhatsAppTemplate, params: TemplateParams): string {
@@ -111,6 +114,34 @@ function buildMessage(template: WhatsAppTemplate, params: TemplateParams): strin
         `Ticket *#${params.ticketNumber}*${params.postName ? ` - Rendez-vous au poste *${params.postName}*` : ''}`,
         ``,
         `Merci de vous présenter immédiatement.`,
+      ]
+        .filter(Boolean)
+        .join('\n')
+
+    case 'virtual_depart':
+      return [
+        `🚗 *SmartQueue - Partez maintenant !*`,
+        ``,
+        `Votre ticket *#${params.ticketNumber}* sera bientôt appelé.`,
+        ``,
+        params.serviceName ? `📍 Service : ${params.serviceName}` : '',
+        params.estimatedTime ? `⏱️ Temps d'attente estimé : ~${params.estimatedTime} min` : '',
+        ``,
+        `Il est temps de vous mettre en route pour arriver à temps !`,
+        params.trackingUrl ? `📱 Suivi en direct : ${params.trackingUrl}` : '',
+      ]
+        .filter(Boolean)
+        .join('\n')
+
+    case 'virtual_arrived':
+      return [
+        `📍 *SmartQueue - Vous êtes arrivé !*`,
+        ``,
+        `Ticket *#${params.ticketNumber}*`,
+        params.serviceName ? `Service : ${params.serviceName}` : '',
+        params.position ? `Position dans la file : ${params.position}` : '',
+        ``,
+        `Nous avons détecté votre arrivée. Veuillez patienter, vous serez appelé sous peu.`,
       ]
         .filter(Boolean)
         .join('\n')

@@ -1,8 +1,8 @@
 # 📋 Analyse Fonctionnelle Complète — SmartQueue
 
-**Version** : 1.2  
+**Version** : 1.3  
 **Date** : 18 mars 2026  
-**Dernière mise à jour** : 22 mars 2026
+**Dernière mise à jour** : 23 mars 2026
 
 ---
 
@@ -20,14 +20,15 @@
 10. [Système de rendez-vous — Flux complet](#10--système-de-rendez-vous--flux-complet)
 11. [Système hybride Tickets/RDV — Coexistence](#11--système-hybride-ticketsrdv--coexistence)
 12. [Estimation Intelligente (ML)](#12--estimation-intelligente-ml)
-13. [Système de feedback](#13--système-de-feedback)
-14. [Notifications WhatsApp](#14--notifications-whatsapp)
-15. [Affichage public TV](#15--affichage-public-tv)
-16. [Thème personnalisable](#16--thème-personnalisable)
-17. [Sécurité](#17--sécurité)
-18. [Routes et middleware](#18--routes-et-middleware)
-19. [Arborescence des pages](#19--arborescence-des-pages)
-20. [Diagrammes de flux](#20--diagrammes-de-flux)
+13. [File d'Attente Virtuelle](#13--file-dattente-virtuelle)
+14. [Système de feedback](#14--système-de-feedback)
+15. [Notifications WhatsApp](#15--notifications-whatsapp)
+16. [Affichage public TV](#16--affichage-public-tv)
+17. [Thème personnalisable](#17--thème-personnalisable)
+18. [Sécurité](#18--sécurité)
+19. [Routes et middleware](#19--routes-et-middleware)
+20. [Arborescence des pages](#20--arborescence-des-pages)
+21. [Diagrammes de flux](#21--diagrammes-de-flux)
 
 ---
 
@@ -832,7 +833,95 @@ Page réservée OWNER/ADMIN affichant :
 
 ---
 
-## 13 — Système de feedback
+## 13 — File d'Attente Virtuelle
+
+### Concept
+
+La file d'attente virtuelle permet au client de **prendre un ticket depuis chez lui** et d'être guidé par géolocalisation pour savoir quand se déplacer. Le système calcule automatiquement le moment optimal de départ en croisant le temps d'attente estimé (ML) et le temps de trajet (distance GPS).
+
+### Flux complet
+
+```
+Client chez lui                    Client en route                    Client sur place
+      │                                  │                                  │
+      ▼                                  ▼                                  ▼
+Prend un ticket virtuel        GPS → MAJ position automatique      Notification "Vous êtes arrivé"
+via /page/{pageName}           + estimation du temps de trajet      Le ticket est traité normalement
+      │                                  │
+      ▼                                  ▼
+Reçoit un lien de suivi        Notification WhatsApp
+/track/{trackingToken}         "Partez maintenant !" quand ETA ≈ trajet
+```
+
+### Configuration entreprise (OWNER/ADMIN)
+
+Page `/settings/virtual-queue` :
+- **Toggle** activation/désactivation de la file virtuelle
+- **Localisation GPS** de l'entreprise (coordonnées ou "Utiliser ma position")
+- **Rayon de proximité** (100m - 2000m) : distance pour considérer le client "arrivé"
+
+### Création de ticket virtuel
+
+Sur la page publique `/page/{pageName}`, si la file virtuelle est activée :
+1. Le client coche **"Je ne suis pas sur place (ticket virtuel)"**
+2. Le numéro WhatsApp devient **obligatoire** (pour les notifications de départ/arrivée)
+3. Un **trackingToken** UUID est généré (non prédictible, sert de preuve d'accès)
+4. Après création, le client reçoit un **lien de suivi** `/track/{trackingToken}`
+
+### Page de tracking — `/track/{trackingToken}`
+
+Page publique dédiée au suivi en temps réel, affichant :
+- **Position dans la file** : "Vous êtes le Xème sur Y" + barre de progression
+- **Temps d'attente estimé** : estimation ML + badge de confiance
+- **Distance** : distance client ↔ entreprise (si GPS actif)
+- **Conseil de départ** : "Partez dans X min" / "Partez maintenant !"
+- **Statut du GPS** : indicateur vert/gris + message d'erreur si refusé
+- **Bouton partager** : copier le lien de suivi
+- Polling automatique toutes les 10 secondes
+
+### Notifications WhatsApp
+
+| Template | Déclencheur | Message |
+|----------|-------------|---------|
+| `virtual_depart` | `estimatedWait ≈ travelTime (±5 min)` | "🚗 Partez maintenant ! Votre ticket sera bientôt appelé." |
+| `virtual_arrived` | `distance < proximityRadius` | "📍 Vous êtes arrivé ! Veuillez patienter." |
+
+### Calcul de distance — Haversine
+
+Le calcul de distance utilise la **formule de Haversine** (distance sur sphère terrestre) :
+- Précision : ±0.5% (suffisant pour des distances urbaines)
+- Estimation de trajet : ~30 km/h en voiture (moyenne ville), ~5 km/h à pied
+- Aucune API externe requise (pas de Google Maps / Mapbox)
+
+### Vie privée (RGPD)
+
+- ✅ **Consentement explicite** avant collecte de géolocalisation
+- ✅ **Seule la dernière position** est stockée (pas d'historique de trajets)
+- ✅ **Suppression automatique** des données GPS quand le ticket passe en FINISHED
+- ✅ Le client peut **désactiver le GPS** à tout moment (fallback : pas de notification proximité)
+- ✅ Le `trackingToken` est un UUID non prédictible
+
+### Visibilité côté staff
+
+Les tickets virtuels sont identifiés visuellement par :
+- Badge **🌐 Virtuel** sur le composant TicketComponent
+- Badge **📍 distance** (ex: "2.3 km" ou "GPS inactif")
+
+### Fichiers clés
+
+| Fichier | Rôle |
+|---------|------|
+| `prisma/schema.prisma` | Champs `isVirtual`, `clientLat`, `clientLng`, `trackingToken`, `departureNotified`, `arrivalNotified` (Ticket) + `latitude`, `longitude`, `virtualQueueEnabled`, `proximityRadius` (Company) |
+| `lib/geo-utils.ts` | Haversine, estimation trajet, validation coordonnées, formatage distance |
+| `app/actions/virtual-queue.ts` | Config entreprise, MAJ position client, notifications proximité/départ, nettoyage RGPD |
+| `app/actions/tracking.ts` | Récupération des données de suivi pour la page de tracking |
+| `app/track/[trackingToken]/page.tsx` | Page de suivi en temps réel (client) |
+| `app/settings/virtual-queue/page.tsx` | Page de configuration (OWNER/ADMIN) |
+| `lib/whatsapp.ts` | Templates `virtual_depart` et `virtual_arrived` |
+
+---
+
+## 14 — Système de feedback
 
 ### Flux
 
@@ -853,7 +942,7 @@ Page réservée OWNER/ADMIN affichant :
 
 ---
 
-## 14 — Notifications WhatsApp
+## 15 — Notifications WhatsApp
 
 ### Configuration
 
@@ -877,7 +966,7 @@ Variables d'environnement requises :
 
 ---
 
-## 15 — Affichage public TV
+## 16 — Affichage public TV
 
 ### URL : `/display/{pageName}`
 
@@ -895,7 +984,7 @@ Variables d'environnement requises :
 
 ---
 
-## 16 — Thème personnalisable
+## 17 — Thème personnalisable
 
 ### Champs disponibles
 
@@ -923,7 +1012,7 @@ Le composant `CompanyThemeProvider` :
 
 ---
 
-## 17 — Sécurité
+## 18 — Sécurité
 
 ### Authentification
 
@@ -975,7 +1064,7 @@ Système en mémoire (`lib/ratelimit.ts`) avec fenêtre glissante :
 
 ---
 
-## 18 — Routes et middleware
+## 19 — Routes et middleware
 
 ### Middleware (`proxy.ts`)
 
@@ -989,6 +1078,7 @@ const isPublicRoute = createRouteMatcher([
   '/offline',           // Page hors-ligne (PWA)
   '/display(.*)',       // Affichage public TV
   '/appointment(.*)',   // Prise de RDV + annulation
+  '/track(.*)',         // Suivi ticket virtuel
 ])
 ```
 
@@ -1006,6 +1096,7 @@ Toute route **non listée** nécessite une authentification Clerk (`auth.protect
 | `/appointment/{pageName}` | Page | ❌ | — | Prise de RDV (client) |
 | `/appointment/cancel/{token}` | Page | ❌ | — | Annulation de RDV (client) |
 | `/display/{pageName}` | Page | ❌ | — | Affichage TV |
+| `/track/{trackingToken}` | Page | ❌ | — | Suivi ticket virtuel (GPS + file) |
 | `/offline` | Page | ❌ | — | Page hors-ligne PWA |
 | `/home` | Page | ✅ | ALL | Tableau de bord principal |
 | `/services` | Page | ✅ | OWNER/ADMIN | Gestion des services |
@@ -1017,12 +1108,13 @@ Toute route **non listée** nécessite une authentification Clerk (`auth.protect
 | `/feedbacks` | Page | ✅ | OWNER/ADMIN | Statistiques feedbacks |
 | `/appointments` | Page | ✅ | OWNER/ADMIN | Dashboard rendez-vous |
 | `/estimation` | Page | ✅ | OWNER/ADMIN | Estimations ML (précision, sync avgTime) |
+| `/settings/virtual-queue` | Page | ✅ | OWNER/ADMIN | Configuration file virtuelle |
 | `/settings/business-hours` | Page | ✅ | OWNER/ADMIN | Configuration horaires |
 | `/settings/theme` | Page | ✅ | OWNER/ADMIN | Personnalisation visuelle |
 
 ---
 
-## 19 — Arborescence des pages
+## 20 — Arborescence des pages
 
 ```
 /                               ← Landing page (public)
@@ -1035,6 +1127,7 @@ Toute route **non listée** nécessite une authentification Clerk (`auth.protect
 ├── /display/{pageName}         ← [PUBLIC] Affichage TV
 ├── /appointment/{pageName}     ← [PUBLIC] Prise de RDV
 ├── /appointment/cancel/{token} ← [PUBLIC] Annulation RDV
+├── /track/{trackingToken}       ← [PUBLIC] Suivi ticket virtuel (GPS)
 │
 ├── /home                       ← [AUTH] Tableau de bord (adaptif selon rôle)
 │   ├── STAFF → Mes postes assignés
@@ -1052,13 +1145,14 @@ Toute route **non listée** nécessite une authentification Clerk (`auth.protect
 ├── /estimation                 ← [OWNER/ADMIN] Estimations ML
 │
 └── /settings/
+    ├── virtual-queue           ← [OWNER/ADMIN] Configuration file virtuelle
     ├── business-hours          ← [OWNER/ADMIN] Configuration horaires
     └── theme                   ← [OWNER/ADMIN] Personnalisation visuelle
 ```
 
 ---
 
-## 20 — Diagrammes de flux
+## 21 — Diagrammes de flux
 
 ### 20.1 — Flux d'authentification et détermination du rôle
 

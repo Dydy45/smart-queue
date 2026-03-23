@@ -320,6 +320,7 @@ export async function createTicket(
     pageName: string,
     phoneNumber?: string,
     whatsappConsent?: boolean,
+    isVirtual?: boolean,
 ) {
     try {
         // Rate limiting: 10 tickets par minute par page
@@ -346,6 +347,11 @@ export async function createTicket(
             throw new Error(`Aucune entreprise trouvée avec le nom de page : ${validatedPageName}`)
         }
 
+        // Vérifier que la file virtuelle est activée si ticket virtuel
+        if (isVirtual && !company.virtualQueueEnabled) {
+            throw new Error('La file d\'attente virtuelle n\'est pas activée pour cette entreprise')
+        }
+
         // Validation du numéro WhatsApp (si fourni)
         let validatedPhone: string | null = null
         if (phoneNumber && whatsappConsent) {
@@ -357,7 +363,15 @@ export async function createTicket(
             validatedPhone = formatted
         }
 
+        // Pour un ticket virtuel, le numéro WhatsApp est obligatoire
+        if (isVirtual && !validatedPhone) {
+            throw new Error('Un numéro WhatsApp est requis pour un ticket virtuel')
+        }
+
         const ticketNum = generateTicketNumber()
+
+        // Générer un trackingToken pour les tickets virtuels
+        const trackingToken = isVirtual ? crypto.randomUUID() : null
 
         // eslint-disable-next-line @typescript-eslint/no-unused-vars
         const ticket = await prisma.ticket.create({
@@ -368,10 +382,12 @@ export async function createTicket(
                 status: "PENDING",
                 phoneNumber: validatedPhone,
                 whatsappConsent: !!(whatsappConsent && validatedPhone),
+                isVirtual: !!isVirtual,
+                trackingToken,
             }
         })
 
-        return ticketNum
+        return { ticketNum, trackingToken }
 
     } catch (error) {
         if (error instanceof RateLimitError) {
@@ -445,19 +461,34 @@ export async function getPendingTicketsByEmail(email:string) {
             (a,b) => new Date(a.createdAt).getTime() - new Date(b.createdAt).getTime()
         )
 
-        // Enrichir les tickets PENDING avec les estimations ML
+        // Enrichir les tickets PENDING avec les estimations ML + distance pour virtuels
         const { getEstimatedWaitTime } = await import('@/lib/wait-time-estimator')
+        const { calculateDistance, formatDistance } = await import('@/lib/geo-utils')
         const pendingOnly = pendingTickets.filter(t => t.status === 'PENDING')
         const enrichedTickets = await Promise.all(
             pendingTickets.map(async (ticket) => {
-                if (ticket.status !== 'PENDING') return ticket
-                const position = pendingOnly.findIndex(t => t.id === ticket.id) + 1
-                try {
-                    const estimate = await getEstimatedWaitTime(ticket.serviceId, accessInfo.companyId, position)
-                    return { ...ticket, estimatedWait: estimate.minutes, confidence: estimate.confidence }
-                } catch {
-                    return ticket
+                let enriched = { ...ticket, clientDistance: undefined as string | undefined }
+
+                // Estimation ML pour PENDING
+                if (ticket.status === 'PENDING') {
+                    const position = pendingOnly.findIndex(t => t.id === ticket.id) + 1
+                    try {
+                        const estimate = await getEstimatedWaitTime(ticket.serviceId, accessInfo.companyId, position)
+                        enriched = { ...enriched, estimatedWait: estimate.minutes, confidence: estimate.confidence } as typeof enriched
+                    } catch {
+                        // fallback
+                    }
                 }
+
+                // Distance pour tickets virtuels
+                if (ticket.isVirtual && ticket.clientLat && ticket.clientLng && company.latitude && company.longitude) {
+                    const dist = calculateDistance(ticket.clientLat, ticket.clientLng, company.latitude, company.longitude)
+                    enriched.clientDistance = formatDistance(dist)
+                } else if (ticket.isVirtual) {
+                    enriched.clientDistance = 'GPS inactif'
+                }
+
+                return enriched
             })
         )
 
@@ -850,6 +881,24 @@ export async function updateTicketStatus(ticketId: string, newStatus: string) {
         } catch (whatsappError) {
             // Ne pas bloquer le flux principal si WhatsApp échoue
             console.error('[WhatsApp] Erreur notification (non-bloquant):', whatsappError)
+        }
+
+        // File virtuelle : vérifier les notifications de départ (non-bloquant)
+        try {
+            const { checkDepartureNotifications } = await import('@/app/actions/virtual-queue')
+            checkDepartureNotifications(updatedTicket.serviceId).catch(console.error)
+        } catch {
+            // Non-bloquant
+        }
+
+        // RGPD : nettoyer les données GPS quand le ticket est terminé
+        if (newStatus === 'FINISHED') {
+            try {
+                const { cleanupGeoData } = await import('@/app/actions/virtual-queue')
+                cleanupGeoData(ticketId).catch(console.error)
+            } catch {
+                // Non-bloquant
+            }
         }
     } catch (error) {
         if (error instanceof RateLimitError) {

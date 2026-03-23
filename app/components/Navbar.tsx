@@ -37,6 +37,7 @@ const Navbar = () => {
             { href: "/feedbacks", label: "Feedbacks", roles: ['OWNER', 'ADMIN'] },
             { href: "/appointments", label: "Rendez-vous", roles: ['OWNER', 'ADMIN'] },
             { href: "/estimation", label: "Estimations", roles: ['OWNER', 'ADMIN'] },
+            { href: "/settings/virtual-queue", label: "File virtuelle", roles: ['OWNER', 'ADMIN'] },
             { href: "/settings/business-hours", label: "Horaires", roles: ['OWNER', 'ADMIN'] },
             { href: "/settings/theme", label: "Thème", roles: ['OWNER', 'ADMIN'] }
         ]

@@ -31,6 +31,9 @@ const page = ({ params }: { params: Promise<{ pageName: string }> }) => {
   const [finishedTickets, setFinishedTickets] = useState<Ticket[]>([])
   const [feedbackTicket, setFeedbackTicket] = useState<Ticket | null>(null)
   const [theme, setTheme] = useState<{ name: string; logoUrl: string | null; primaryColor: string; accentColor: string; description: string | null } | null>(null)
+  const [isVirtual, setIsVirtual] = useState(false)
+  const [virtualQueueEnabled, setVirtualQueueEnabled] = useState(false)
+  const [lastTrackingToken, setLastTrackingToken] = useState<string | null>(null)
   const TICKETS_PER_PAGE = 5
 
   const totalPages = Math.ceil(tickets.length / TICKETS_PER_PAGE)
@@ -44,11 +47,13 @@ const page = ({ params }: { params: Promise<{ pageName: string }> }) => {
     try {
       const resolvedParams = await params
       setPageName(resolvedParams.pageName)
-      const [servicesList, themeData] = await Promise.all([
+      const [servicesList, themeData, vqConfig] = await Promise.all([
         getServicesByPageName(resolvedParams.pageName),
         getCompanyTheme(resolvedParams.pageName),
+        import('@/app/actions/virtual-queue').then(m => m.getVirtualQueuePublicConfig(resolvedParams.pageName)),
       ])
       if (themeData) setTheme(themeData)
+      if (vqConfig) setVirtualQueueEnabled(vqConfig.enabled)
       if (servicesList) {
         setServices(servicesList)
         showSuccess(`${servicesList.length} service(s) chargé(s) avec succès`)
@@ -147,18 +152,31 @@ const page = ({ params }: { params: Promise<{ pageName: string }> }) => {
     }
     setIsLoading(true)
     try {
-      const ticketNum = await createTicket(
+      // Validation : ticket virtuel nécessite WhatsApp
+      if (isVirtual && (!whatsappConsent || !phoneNumber)) {
+        showError('Un numéro WhatsApp est requis pour un ticket virtuel.')
+        setIsLoading(false)
+        return
+      }
+
+      const result = await createTicket(
           selectedServiceId,
           nameComplete,
           pageName || '',
           whatsappConsent ? phoneNumber : undefined,
           whatsappConsent || undefined,
+          isVirtual || undefined,
         )
-      if (ticketNum) {
+      if (result) {
+        const { ticketNum, trackingToken } = result
         setSelectedServiceId(null)
         setNameComplete("")
         setPhoneNumber("")
         setWhatsappConsent(false)
+        setIsVirtual(false)
+        if (trackingToken) {
+          setLastTrackingToken(trackingToken)
+        }
         const updatedTicketNums = [...ticketNums, ticketNum];
         setTicketNums(updatedTicketNums)
         localStorage.setItem("ticketNums", JSON.stringify(updatedTicketNums))
@@ -223,6 +241,32 @@ const page = ({ params }: { params: Promise<{ pageName: string }> }) => {
             aria-label="Votre nom"
           />
 
+          {/* File virtuelle opt-in */}
+          {virtualQueueEnabled && (
+            <div className="bg-base-200 rounded-lg p-3 space-y-2">
+              <label className="flex items-center gap-2 cursor-pointer">
+                <input
+                  type="checkbox"
+                  className="checkbox checkbox-accent checkbox-sm"
+                  checked={isVirtual}
+                  onChange={(e) => {
+                    setIsVirtual(e.target.checked)
+                    if (e.target.checked) setWhatsappConsent(true)
+                  }}
+                  disabled={isLoading}
+                />
+                <span className="text-sm">
+                  Je ne suis pas sur place (ticket virtuel)
+                </span>
+              </label>
+              {isVirtual && (
+                <p className="text-xs text-base-content/60 ml-6">
+                  Vous recevrez un lien de suivi en temps réel et une notification WhatsApp quand il sera temps de partir.
+                </p>
+              )}
+            </div>
+          )}
+
           {/* WhatsApp notification opt-in */}
           <div className="bg-base-200 rounded-lg p-3 space-y-2">
             <label className="flex items-center gap-2 cursor-pointer">
@@ -231,10 +275,11 @@ const page = ({ params }: { params: Promise<{ pageName: string }> }) => {
                 className="checkbox checkbox-primary checkbox-sm"
                 checked={whatsappConsent}
                 onChange={(e) => setWhatsappConsent(e.target.checked)}
-                disabled={isLoading}
+                disabled={isLoading || isVirtual}
               />
               <span className="text-sm">
                 Recevoir une notification WhatsApp quand mon tour approche
+                {isVirtual && <span className="badge badge-xs badge-accent ml-1">requis</span>}
               </span>
             </label>
             {whatsappConsent && (
@@ -261,10 +306,36 @@ const page = ({ params }: { params: Promise<{ pageName: string }> }) => {
                 Création...
               </>
             ) : (
-              'Go'
+              isVirtual ? 'Prendre un ticket virtuel' : 'Go'
             )}
           </button>
         </form>
+
+        {/* Lien de suivi après création d'un ticket virtuel */}
+        {lastTrackingToken && (
+          <div className="alert alert-info mt-4 md:ml-4 md:mt-0 md:max-w-md">
+            <div className="flex flex-col gap-2">
+              <span className="font-bold">Votre lien de suivi en temps réel :</span>
+              <a
+                href={`/track/${lastTrackingToken}`}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="link link-primary break-all text-sm"
+              >
+                {typeof window !== 'undefined' ? window.location.origin : ''}/track/{lastTrackingToken}
+              </a>
+              <button
+                className="btn btn-sm btn-outline w-fit"
+                onClick={() => {
+                  navigator.clipboard.writeText(`${window.location.origin}/track/${lastTrackingToken}`)
+                  showSuccess('Lien copié !')
+                }}
+              >
+                Copier le lien
+              </button>
+            </div>
+          </div>
+        )}
 
         <div className='w-full mt-4 md:ml-4 md:mt-0'>
 

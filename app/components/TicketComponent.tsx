@@ -84,6 +84,12 @@ const TicketComponent: React.FC<TicketComponentProps> = ({ ticket, index, totalW
                 {ticket.priority === 'APPOINTMENT' && (
                     <span className='badge badge-primary badge-outline ml-2 gap-1'>📅 RDV</span>
                 )}
+                {ticket.isVirtual && (
+                    <span className='badge badge-accent badge-outline ml-2 gap-1'>🌐 Virtuel</span>
+                )}
+                {ticket.clientDistance && (
+                    <span className='badge badge-ghost badge-outline ml-1 gap-1'>📍 {ticket.clientDistance}</span>
+                )}
                 <span className='font-bold text-xl'>
                     <span className='ml-2'>
                         {ticket?.serviceName}

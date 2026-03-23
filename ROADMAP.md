@@ -41,7 +41,7 @@ Ce document présente les améliorations potentielles pour SmartQueue, organisé
 |----|--------------|-------------|--------|--------|
 | 2.1 | **Système de Rendez-vous** | Prise de RDV en ligne avec calendrier intégré et rappels automatiques | 🔥 Élevé | Élevé |
 | 2.2 | **Estimation Intelligente (ML)** ✅ | EWMA contextuel pour prédire les temps d'attente basés sur l'historique réel | 🔥 Élevé | Élevé |
-| 2.3 | **Files d'Attente Virtuelles** | Le client prend son ticket depuis chez lui + géolocalisation pour notification | 🔥 Élevé | Élevé |
+| 2.3 | **Files d'Attente Virtuelles** ✅ | Ticket virtuel + tracking GPS + notifications départ/arrivée (Haversine) | 🔥 Élevé | Élevé |
 | 2.4 | **API Publique REST** | Exposer une API pour intégrations tierces + documentation Swagger | 🔥 Élevé | Moyen |
 | 2.5 | **Tableaux de Bord Avancés** | Heatmaps, prédictions d'affluence, KPIs avancés (NPS, satisfaction) | Moyen | Moyen |
 | 2.6 | **Notifications WhatsApp** | Intégration WhatsApp Business API pour notifications | Moyen | Moyen |

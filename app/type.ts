@@ -5,4 +5,5 @@ export type Ticket = TicketCompany & {
     avgTime : number ;
     estimatedWait? : number ;
     confidence? : 'none' | 'low' | 'medium' | 'high'
+    clientDistance? : string ;
 }
