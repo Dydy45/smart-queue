@@ -1,16 +1,73 @@
 /**
  * Rate Limiting Configuration
- * Limite le nombre de requêtes par utilisateur/IP pour éviter les abus
+ * Utilise Upstash Redis en production, fallback en mémoire pour le dev local
  */
+
+import { Ratelimit } from '@upstash/ratelimit'
+import { Redis } from '@upstash/redis'
+
+// ===== Upstash Redis (production) =====
+
+const isUpstashConfigured =
+  !!process.env.UPSTASH_REDIS_REST_URL && !!process.env.UPSTASH_REDIS_REST_TOKEN
+
+let redis: Redis | null = null
+if (isUpstashConfigured) {
+  redis = new Redis({
+    url: process.env.UPSTASH_REDIS_REST_URL!,
+    token: process.env.UPSTASH_REDIS_REST_TOKEN!,
+  })
+}
+
+// Cache des instances Ratelimit Upstash (1 par combinaison limit/window)
+const upstashLimiters = new Map<string, Ratelimit>()
+
+function getUpstashLimiter(limit: number, windowMs: number): Ratelimit {
+  const key = `${limit}:${windowMs}`
+  let limiter = upstashLimiters.get(key)
+  if (!limiter) {
+    const windowSec = Math.max(1, Math.ceil(windowMs / 1000))
+    limiter = new Ratelimit({
+      redis: redis!,
+      limiter: Ratelimit.slidingWindow(limit, `${windowSec} s`),
+      prefix: 'sq_rl',
+    })
+    upstashLimiters.set(key, limiter)
+  }
+  return limiter
+}
+
+// ===== Fallback en mémoire (dev local) =====
 
 interface RateLimitEntry {
   count: number
   resetTime: number
 }
 
-// Store en mémoire pour le développement
-// En production, utiliser Redis/Upstash
 const rateLimitStore = new Map<string, RateLimitEntry>()
+
+function checkInMemory(
+  key: string,
+  limit: number,
+  windowMs: number
+): { success: boolean; remaining: number } {
+  const now = Date.now()
+  const entry = rateLimitStore.get(key)
+
+  if (!entry || now >= entry.resetTime) {
+    rateLimitStore.set(key, { count: 1, resetTime: now + windowMs })
+    return { success: true, remaining: limit - 1 }
+  }
+
+  if (entry.count >= limit) {
+    return { success: false, remaining: 0 }
+  }
+
+  entry.count++
+  return { success: true, remaining: limit - entry.count }
+}
+
+// ===== API publique (même signature qu'avant) =====
 
 /**
  * Vérifie et met à jour le rate limit pour une clé donnée
@@ -22,28 +79,20 @@ const rateLimitStore = new Map<string, RateLimitEntry>()
 export async function checkRateLimit(
   key: string,
   limit: number = 10,
-  windowMs: number = 60000 // 1 minute par défaut
+  windowMs: number = 60000
 ): Promise<{ success: boolean; remaining: number }> {
-  const now = Date.now()
-  const entry = rateLimitStore.get(key)
-
-  // Si pas d'entrée ou fenêtre expirée
-  if (!entry || now >= entry.resetTime) {
-    rateLimitStore.set(key, {
-      count: 1,
-      resetTime: now + windowMs
-    })
-    return { success: true, remaining: limit - 1 }
+  if (isUpstashConfigured && redis) {
+    try {
+      const limiter = getUpstashLimiter(limit, windowMs)
+      const { success, remaining } = await limiter.limit(key)
+      return { success, remaining }
+    } catch {
+      // Fallback silencieux si Upstash échoue
+      return checkInMemory(key, limit, windowMs)
+    }
   }
 
-  // Si limite atteinte
-  if (entry.count >= limit) {
-    return { success: false, remaining: 0 }
-  }
-
-  // Incrémenter le compteur
-  entry.count++
-  return { success: true, remaining: limit - entry.count }
+  return checkInMemory(key, limit, windowMs)
 }
 
 /**
@@ -108,10 +157,11 @@ export const rateLimitConfig = {
 }
 
 /**
- * Nettoie les entrées expirées toutes les 10 minutes
- * pour éviter une fuite mémoire
+ * Nettoyage des entrées expirées (fallback mémoire uniquement)
+ * No-op si Upstash est configuré (TTL géré par Redis)
  */
 export function startRateLimitCleanup() {
+  if (isUpstashConfigured) return
   setInterval(() => {
     const now = Date.now()
     for (const [key, entry] of rateLimitStore.entries()) {
@@ -119,7 +169,7 @@ export function startRateLimitCleanup() {
         rateLimitStore.delete(key)
       }
     }
-  }, 10 * 60 * 1000) // Nettoyage toutes les 10 minutes
+  }, 10 * 60 * 1000)
 }
 
 /**
