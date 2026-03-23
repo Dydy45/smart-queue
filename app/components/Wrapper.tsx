@@ -38,9 +38,10 @@ const Wrapper = ({ children }: WrapperProps) => {
 
     useEffect(() => {
         const init = async () => {
-            if (email && user.fullName) {
-                setIsRoleLoading(true)
-                const { role, pageName } = await initUserSession(email, user.fullName)
+            if (!email) return
+            setIsRoleLoading(true)
+            try {
+                const { role, pageName } = await initUserSession(email, user?.fullName ?? '')
                 if (pageName) setPageName(pageName)
                 if (role) {
                     localStorage.setItem('sq_user_role', role)
@@ -48,6 +49,9 @@ const Wrapper = ({ children }: WrapperProps) => {
                     localStorage.removeItem('sq_user_role')
                 }
                 setUserRole(role)
+            } catch (error) {
+                console.error('[Wrapper] initUserSession error:', error)
+            } finally {
                 setIsRoleLoading(false)
             }
         }
