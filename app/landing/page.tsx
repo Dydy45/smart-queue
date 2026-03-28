@@ -528,9 +528,9 @@ export default function LandingPage() {
 
                   <div className="flex items-baseline gap-1 mb-6">
                     {plan.oldPrice && (
-                      <span className="text-base-content/40 line-through text-lg">{plan.oldPrice}$</span>
+                      <span className="text-base-content/40 line-through text-lg">${plan.oldPrice}</span>
                     )}
-                    <span className="text-4xl font-extrabold">{plan.price}$</span>
+                    <span className="text-4xl font-extrabold">${plan.price}</span>
                     <span className="text-base-content/50 text-sm">/mois</span>
                   </div>
 
