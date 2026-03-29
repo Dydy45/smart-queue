@@ -7,7 +7,7 @@ import { Ticket } from "../type";
 import TicketComponent from "../components/TicketComponent";
 import Link from "next/link";
 import { Briefcase, Monitor, Copy, ExternalLink, CalendarDays } from "lucide-react";
-import OnboardingModal from "../components/OnboardingModal";
+import OnboardingTour from "../components/OnboardingTour";
 
 type AssignedPost = {
   id: string
@@ -151,28 +151,11 @@ export default function Home() {
     )
   }
 
-  const handleCloseOnboarding = () => {
-    localStorage.setItem('sq_onboarding_done', '1')
-    setShowOnboarding(false)
-  }
-
-  const handleOpenSettings = () => {
-    localStorage.setItem('sq_onboarding_done', '1')
-    setShowOnboarding(false)
-    const modal = document.getElementById('my_modal_3') as HTMLDialogElement | null
-    modal?.showModal()
-  }
-
   // Vue par défaut pour OWNER/ADMIN : dashboard complet
   return (
     <Wrapper>
 
-      {showOnboarding && (
-        <OnboardingModal
-          onClose={handleCloseOnboarding}
-          onOpenSettings={handleOpenSettings}
-        />
-      )}
+      <OnboardingTour active={showOnboarding} onDone={() => setShowOnboarding(false)} />
 
       {/* Section Affichage Public TV */}
       {pageName && (userRole === 'OWNER' || userRole === 'ADMIN') && (

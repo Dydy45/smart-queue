@@ -8,6 +8,7 @@ import { Staff, Post } from '../generated/prisma'
 import { Trash, UserPlus, X } from 'lucide-react'
 import EmptyState from '../components/EmptyState'
 import { useToast } from '@/lib/useToast'
+import { usePageTour } from '@/lib/usePageTour'
 
 const page = () => {
   const { user } = useUser()
@@ -22,6 +23,18 @@ const page = () => {
   const [staffName, setStaffName] = useState('')
   const [staffRole, setStaffRole] = useState<'ADMIN' | 'STAFF'>('STAFF')
   const [selectedStaffId, setSelectedStaffId] = useState<string | null>(null)
+
+  usePageTour('staff', [
+    {
+      element: '#tour-staff-form',
+      popover: {
+        title: '④ Ajoutez vos employés',
+        description: 'Renseignez l\'<b>email</b> et le <b>nom</b> de l\'employé, choisissez son rôle :<br><ul style="margin-top:8px;padding-left:16px;"><li><b>Admin</b> — gère services, postes et plannings</li><li><b>Staff</b> — traite uniquement les tickets des postes assignés</li></ul><br>Après l\'ajout, cliquez sur <b>Postes</b> en face de l\'employé pour lui assigner ses postes.',
+        side: 'right',
+        align: 'start',
+      },
+    },
+  ], !!email)
 
   const fetchStaff = async () => {
     setLoading(true)
@@ -155,7 +168,7 @@ const page = () => {
     <Wrapper>
       <div className='flex w-full flex-col md:flex-row'>
         {/* Formulaire d'ajout */}
-        <div className='space-y-2 md:w-1/3 w-full'>
+        <div id="tour-staff-form" className='space-y-2 md:w-1/3 w-full'>
           <h2 className='text-xl font-bold mb-4'>Ajouter un employé</h2>
 
           <div>

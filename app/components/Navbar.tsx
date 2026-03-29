@@ -48,6 +48,7 @@ const Navbar: React.FC<NavbarProps> = ({ email, pageName, onPageNameChange, onMo
 
                 <div className="flex items-center gap-2">
                     <button
+                        id="tour-settings-btn"
                         className="btn btn-sm btn-primary btn-circle"
                         onClick={() => (document.getElementById('my_modal_3') as HTMLDialogElement).showModal()}
                         aria-label="Ouvrir les paramètres"

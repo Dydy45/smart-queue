@@ -27,6 +27,7 @@ type NavGroup = {
     label: string
     icon: React.ReactNode
     roles: string[]
+    id?: string
   }[]
 }
 
@@ -35,14 +36,14 @@ const navGroups: NavGroup[] = [
     label: 'Principal',
     links: [
       { href: '/home', label: 'Accueil', icon: <Home className="w-5 h-5" />, roles: ['OWNER', 'ADMIN', 'STAFF'] },
-      { href: '/services', label: 'Services', icon: <Layers className="w-5 h-5" />, roles: ['OWNER', 'ADMIN'] },
-      { href: '/poste_list', label: 'Postes', icon: <Monitor className="w-5 h-5" />, roles: ['OWNER', 'ADMIN'] },
+      { href: '/services', label: 'Services', icon: <Layers className="w-5 h-5" />, roles: ['OWNER', 'ADMIN'], id: 'tour-sidebar-services' },
+      { href: '/poste_list', label: 'Postes', icon: <Monitor className="w-5 h-5" />, roles: ['OWNER', 'ADMIN'], id: 'tour-sidebar-postes' },
     ],
   },
   {
     label: 'Gestion',
     links: [
-      { href: '/staff', label: 'Staff', icon: <Users className="w-5 h-5" />, roles: ['OWNER'] },
+      { href: '/staff', label: 'Staff', icon: <Users className="w-5 h-5" />, roles: ['OWNER'], id: 'tour-sidebar-staff' },
       { href: '/appointments', label: 'Rendez-vous', icon: <Calendar className="w-5 h-5" />, roles: ['OWNER', 'ADMIN'] },
     ],
   },
@@ -96,9 +97,10 @@ const Sidebar: React.FC<SidebarProps> = ({
 
   const isActive = (href: string) => pathname === href || pathname.startsWith(href + '/')
 
-  const renderLink = (link: { href: string; label: string; icon: React.ReactNode }) => (
+  const renderLink = (link: { href: string; label: string; icon: React.ReactNode; id?: string }) => (
     <Link
       key={link.href}
+      id={link.id}
       href={link.href}
       onClick={onMobileClose}
       className={`

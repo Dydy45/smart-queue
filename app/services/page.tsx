@@ -7,6 +7,7 @@ import { createService, deleteServiceById, getServiceByEmail } from '../actions'
 import { Service } from '../generated/prisma'
 import { Clock2, ClockArrowUp, Trash } from 'lucide-react'
 import EmptyState from '../components/EmptyState'
+import { usePageTour } from '@/lib/usePageTour'
 
 const page = () => {
 
@@ -17,6 +18,18 @@ const page = () => {
     const [avgTime, setAvgTime] = useState(0)
     const [loading, setLoading] = useState<boolean>(false)
     const [services, setServices] = useState<Service[]>([])
+
+    usePageTour('services', [
+      {
+        element: '#tour-service-form',
+        popover: {
+          title: '② Créez votre premier service',
+          description: 'Renseignez le <b>nom du service</b> et le <b>temps moyen de traitement</b> (en minutes), puis cliquez sur « Ajouter le service ».<br><br>Exemples : <em>Consultation — 15 min</em>, <em>Caisse — 5 min</em>.',
+          side: 'right',
+          align: 'start',
+        },
+      },
+    ], !!email)
 
     const handleCreateService = async () => {
         if (email && serviceName && avgTime > 0) {
@@ -68,7 +81,7 @@ const page = () => {
     <Wrapper>
       <div className='flex w-full  flex-col md:flex-row'>
 
-        <div className='space-y-2 md:w-1/4 w-full'>
+        <div id="tour-service-form" className='space-y-2 md:w-1/4 w-full'>
 
             <span className='label-text'>Nom Du Service</span>
             <div>

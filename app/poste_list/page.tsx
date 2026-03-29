@@ -10,6 +10,7 @@ import { createPost, deletePost, getPostsByCompanyEmail, getServiceByEmail } fro
 import { Trash } from 'lucide-react'
 import EmptyState from "../components/EmptyState";
 import Link from 'next/link'
+import { usePageTour } from '@/lib/usePageTour'
 
 const page = () => {
 
@@ -22,6 +23,18 @@ const page = () => {
 
   const [posts, setPosts] = useState<Post[]>([])
   const [services, setServices] = useState<Service[]>([])
+
+  usePageTour('postes', [
+    {
+      element: '#tour-post-form',
+      popover: {
+        title: '③ Créez votre premier poste',
+        description: 'Sélectionnez le <b>service associé</b>, donnez un <b>nom au poste</b> (ex : <em>Guichet 1</em>), puis cliquez sur « Créer le poste ».<br><br>Un poste peut ensuite être assigné à un employé depuis la section <b>Staff</b>.',
+        side: 'right',
+        align: 'start',
+      },
+    },
+  ], !!email)
 
   const fetchPosts = async () => {
     if(email){
@@ -83,7 +96,7 @@ const page = () => {
     <Wrapper>
       <h1 className='text-2xl font-bold mb-4'>Liste des postes</h1>
       <div className='flex flex-col md:flex-row'>
-        <div className='space-y-2 mr-4'>
+        <div id="tour-post-form" className='space-y-2 mr-4'>
           <select
             className='select select-bordered select-sm w-full'
             value={selectedServiceId}
