@@ -8,6 +8,7 @@ import TicketComponent from "../components/TicketComponent";
 import Link from "next/link";
 import { Briefcase, Monitor, Copy, ExternalLink, CalendarDays } from "lucide-react";
 import OnboardingTour from "../components/OnboardingTour";
+import SetupChecklist from "../components/SetupChecklist";
 
 type AssignedPost = {
   id: string
@@ -156,6 +157,11 @@ export default function Home() {
     <Wrapper>
 
       <OnboardingTour active={showOnboarding} onDone={() => setShowOnboarding(false)} />
+
+      {/* Checklist de configuration — OWNER uniquement */}
+      {userRole === 'OWNER' && email && (
+        <SetupChecklist email={email} pageName={pageName} />
+      )}
 
       {/* Section Affichage Public TV */}
       {pageName && (userRole === 'OWNER' || userRole === 'ADMIN') && (

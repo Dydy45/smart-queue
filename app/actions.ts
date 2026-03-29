@@ -1431,3 +1431,40 @@ export async function getAssignedPosts(email: string, staffId: string) {
         return []
     }
 }
+
+/**
+ * Retourne l'état de configuration d'une entreprise (pour la checklist de setup)
+ */
+export async function getSetupStatus(email: string): Promise<{
+    hasPageName: boolean
+    servicesCount: number
+    postesCount: number
+    staffCount: number
+} | null> {
+    try {
+        const validatedEmail = emailSchema.parse(email)
+        const company = await prisma.company.findUnique({
+            where: { email: validatedEmail },
+            select: {
+                pageName: true,
+                _count: {
+                    select: {
+                        services: true,
+                        posts: true,
+                        staff: true,
+                    }
+                }
+            }
+        })
+        if (!company) return null
+        return {
+            hasPageName: !!company.pageName,
+            servicesCount: company._count.services,
+            postesCount: company._count.posts,
+            staffCount: company._count.staff,
+        }
+    } catch (error) {
+        console.error('[getSetupStatus] Error:', error)
+        return null
+    }
+}
