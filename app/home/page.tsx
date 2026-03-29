@@ -7,6 +7,7 @@ import { Ticket } from "../type";
 import TicketComponent from "../components/TicketComponent";
 import Link from "next/link";
 import { Briefcase, Monitor, Copy, ExternalLink, CalendarDays } from "lucide-react";
+import OnboardingModal from "../components/OnboardingModal";
 
 type AssignedPost = {
   id: string
@@ -28,6 +29,7 @@ export default function Home() {
   const [pageName, setPageName] = useState<string | null>(null)
   const [displayUrlCopied, setDisplayUrlCopied] = useState(false)
   const [appointmentUrlCopied, setAppointmentUrlCopied] = useState(false)
+  const [showOnboarding, setShowOnboarding] = useState(false)
   const TICKETS_PER_PAGE = 10
 
   const totalPages = Math.ceil(tickets.length / TICKETS_PER_PAGE)
@@ -63,7 +65,13 @@ export default function Home() {
         
         setUserRole(role)
         setPageName(pn)
-        
+
+        // Afficher l'onboarding pour les nouveaux OWNER sans pageName
+        if (role === 'OWNER' && !pn) {
+          const done = localStorage.getItem('sq_onboarding_done')
+          if (!done) setShowOnboarding(true)
+        }
+
         // Si STAFF, récupérer ses postes assignés
         if (role === 'STAFF') {
           const posts = await getMyAssignedPosts()
@@ -143,9 +151,28 @@ export default function Home() {
     )
   }
 
+  const handleCloseOnboarding = () => {
+    localStorage.setItem('sq_onboarding_done', '1')
+    setShowOnboarding(false)
+  }
+
+  const handleOpenSettings = () => {
+    localStorage.setItem('sq_onboarding_done', '1')
+    setShowOnboarding(false)
+    const modal = document.getElementById('my_modal_3') as HTMLDialogElement | null
+    modal?.showModal()
+  }
+
   // Vue par défaut pour OWNER/ADMIN : dashboard complet
   return (
     <Wrapper>
+
+      {showOnboarding && (
+        <OnboardingModal
+          onClose={handleCloseOnboarding}
+          onOpenSettings={handleOpenSettings}
+        />
+      )}
 
       {/* Section Affichage Public TV */}
       {pageName && (userRole === 'OWNER' || userRole === 'ADMIN') && (
