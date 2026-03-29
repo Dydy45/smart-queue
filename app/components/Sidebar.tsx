@@ -97,10 +97,10 @@ const Sidebar: React.FC<SidebarProps> = ({
 
   const isActive = (href: string) => pathname === href || pathname.startsWith(href + '/')
 
-  const renderLink = (link: { href: string; label: string; icon: React.ReactNode; id?: string }) => (
+  const renderLink = (link: { href: string; label: string; icon: React.ReactNode; id?: string }, withId = false) => (
     <Link
       key={link.href}
-      id={link.id}
+      id={withId ? link.id : undefined}
       href={link.href}
       onClick={onMobileClose}
       className={`
@@ -118,7 +118,7 @@ const Sidebar: React.FC<SidebarProps> = ({
     </Link>
   )
 
-  const sidebarContent = (
+  const renderContent = (withIds: boolean) => (
     <div className="flex flex-col h-full">
       <nav className="flex-1 overflow-y-auto px-3 py-4 space-y-6">
         {filteredGroups.map((group) => (
@@ -130,7 +130,7 @@ const Sidebar: React.FC<SidebarProps> = ({
             )}
             {collapsed && <div className="border-t border-base-300 mb-2" />}
             <div className="space-y-1">
-              {group.links.map(renderLink)}
+              {group.links.map((link) => renderLink(link, withIds))}
             </div>
           </div>
         ))}
@@ -186,7 +186,7 @@ const Sidebar: React.FC<SidebarProps> = ({
         />
       )}
 
-      {/* Sidebar mobile (drawer) */}
+      {/* Sidebar mobile (drawer) — IDs exclus pour éviter les doublons */}
       <aside
         className={`
           fixed top-0 left-0 z-50 h-full w-64 bg-base-100 border-r border-base-300
@@ -197,10 +197,10 @@ const Sidebar: React.FC<SidebarProps> = ({
         role="navigation"
         aria-label="Menu principal"
       >
-        {sidebarContent}
+        {renderContent(false)}
       </aside>
 
-      {/* Sidebar desktop */}
+      {/* Sidebar desktop — IDs présents pour le tour guidé */}
       <aside
         className={`
           hidden lg:flex flex-col shrink-0 h-screen sticky top-0
@@ -211,7 +211,7 @@ const Sidebar: React.FC<SidebarProps> = ({
         role="navigation"
         aria-label="Menu principal"
       >
-        {sidebarContent}
+        {renderContent(true)}
       </aside>
     </>
   )

@@ -17,6 +17,162 @@
   animation: wiggle 1.5s ease-in-out infinite;
 }
 
+/* ── driver.js coach marks ──────────────────────────────── */
+.driver-popover {
+  background-color: var(--color-base-100, #ffffff);
+  color: var(--color-base-content, #1f2937);
+  border: 1px solid var(--color-base-300, #e5e7eb);
+  border-radius: 12px;
+  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.14);
+  padding: 20px 22px;
+  max-width: 320px;
+  font-family: inherit;
+  font-size: 14px;
+}
+
+.driver-popover-title {
+  font-size: 14px;
+  font-weight: 700;
+  margin-bottom: 10px;
+  color: var(--color-base-content, #111827);
+}
+
+.driver-popover-description {
+  font-size: 13px;
+  line-height: 1.65;
+  color: var(--color-base-content, #374151);
+  opacity: 0.85;
+}
+
+.driver-popover-description code {
+  background: var(--color-base-200, #f3f4f6);
+  border: 1px solid var(--color-base-300, #e5e7eb);
+  padding: 1px 6px;
+  border-radius: 4px;
+  font-family: ui-monospace, monospace;
+  font-size: 12px;
+}
+
+.driver-popover-footer {
+  margin-top: 18px;
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  gap: 8px;
+}
+
+.driver-popover-next-btn,
+.driver-popover-done-btn {
+  background-color: var(--color-primary, #e879a0);
+  color: var(--color-primary-content, #ffffff);
+  border: none;
+  border-radius: 8px;
+  padding: 7px 18px;
+  font-size: 13px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: opacity 0.15s ease;
+  white-space: nowrap;
+}
+
+.driver-popover-next-btn:hover,
+.driver-popover-done-btn:hover {
+  opacity: 0.82;
+}
+
+.driver-popover-prev-btn {
+  background: transparent;
+  border: 1px solid var(--color-base-300, #d1d5db);
+  border-radius: 8px;
+  padding: 6px 14px;
+  font-size: 13px;
+  color: var(--color-base-content, #6b7280);
+  cursor: pointer;
+  transition: background 0.15s ease;
+}
+
+.driver-popover-prev-btn:hover {
+  background: var(--color-base-200, #f9fafb);
+}
+
+.driver-popover-close-btn {
+  position: absolute;
+  top: 12px;
+  right: 12px;
+  background: transparent;
+  border: none;
+  cursor: pointer;
+  color: var(--color-base-content, #9ca3af);
+  opacity: 0.45;
+  font-size: 18px;
+  line-height: 1;
+  padding: 2px 6px;
+  border-radius: 4px;
+}
+
+.driver-popover-close-btn:hover {
+  opacity: 0.85;
+}
+
+.driver-popover-progress-text {
+  font-size: 12px;
+  color: var(--color-base-content, #9ca3af);
+  opacity: 0.5;
+  margin-right: auto;
+}
+
+.driver-popover-arrow-side-left .driver-popover-arrow {
+  border-right-color: var(--color-base-100, #ffffff);
+}
+.driver-popover-arrow-side-right .driver-popover-arrow {
+  border-left-color: var(--color-base-100, #ffffff);
+}
+.driver-popover-arrow-side-top .driver-popover-arrow {
+  border-bottom-color: var(--color-base-100, #ffffff);
+}
+.driver-popover-arrow-side-bottom .driver-popover-arrow {
+  border-top-color: var(--color-base-100, #ffffff);
+}
+
+[data-theme="dark"] .driver-popover {
+  background-color: #1d232a;
+  border-color: #2a323c;
+  color: #a6adbb;
+  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.45);
+}
+
+[data-theme="dark"] .driver-popover-title {
+  color: #e4e8f0;
+}
+
+[data-theme="dark"] .driver-popover-description code {
+  background: #2a323c;
+  border-color: #3a4452;
+}
+
+[data-theme="dark"] .driver-popover-prev-btn {
+  border-color: #3a4452;
+  color: #8a95a3;
+}
+
+[data-theme="dark"] .driver-popover-prev-btn:hover {
+  background: #2a323c;
+}
+
+[data-theme="dark"] .driver-popover-arrow-side-left .driver-popover-arrow {
+  border-right-color: #1d232a;
+}
+[data-theme="dark"] .driver-popover-arrow-side-right .driver-popover-arrow {
+  border-left-color: #1d232a;
+}
+[data-theme="dark"] .driver-popover-arrow-side-top .driver-popover-arrow {
+  border-bottom-color: #1d232a;
+}
+[data-theme="dark"] .driver-popover-arrow-side-bottom .driver-popover-arrow {
+  border-top-color: #1d232a;
+}
+/* ──────────────────────────────────────────────────────── */
+
 @keyframes slide-in {
   from {
     transform: translateX(100%) translateY(-20px);

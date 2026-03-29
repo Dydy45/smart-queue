@@ -28,8 +28,8 @@ const page = () => {
     {
       element: '#tour-post-form',
       popover: {
-        title: '③ Créez votre premier poste',
-        description: 'Sélectionnez le <b>service associé</b>, donnez un <b>nom au poste</b> (ex : <em>Guichet 1</em>), puis cliquez sur « Créer le poste ».<br><br>Un poste peut ensuite être assigné à un employé depuis la section <b>Staff</b>.',
+        title: 'Créez votre premier poste',
+        description: 'Sélectionnez le <strong>service associé</strong>, donnez un <strong>nom au poste</strong> (ex. Guichet 1, Cabinet Dr. Martin), puis cliquez sur <em>Créer le poste</em>.<br><br>Vous pourrez ensuite assigner ce poste à un employé depuis la section Staff.',
         side: 'right',
         align: 'start',
       },

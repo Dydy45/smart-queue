@@ -1,6 +1,7 @@
 "use client"
 
 import { useEffect } from "react"
+import { useRouter } from "next/navigation"
 import { driver } from "driver.js"
 
 const TOUR_DONE_KEY = "sq_onboarding_done"
@@ -11,77 +12,103 @@ interface OnboardingTourProps {
 }
 
 export default function OnboardingTour({ active, onDone }: OnboardingTourProps) {
+  const router = useRouter()
+
   useEffect(() => {
     if (!active) return
 
-    const driverObj = driver({
+    const called = { done: false }
+    const finish = () => {
+      if (called.done) return
+      called.done = true
+      localStorage.setItem(TOUR_DONE_KEY, "1")
+      onDone()
+    }
+
+    let driverObj: ReturnType<typeof driver> | null = null
+
+    const goTo = (path: string) => {
+      finish()
+      driverObj?.destroy()
+      router.push(path)
+    }
+
+    driverObj = driver({
       showProgress: true,
-      progressText: "Étape {{current}} sur {{total}}",
-      nextBtnText: "Suivant →",
-      prevBtnText: "← Précédent",
-      doneBtnText: "Terminer ✓",
+      progressText: "{{current}} / {{total}}",
+      nextBtnText: "Continuer",
+      prevBtnText: "Retour",
+      doneBtnText: "Terminer",
       allowClose: true,
       smoothScroll: true,
-      popoverClass: "sq-tour-popover",
-      onDestroyed: () => {
-        localStorage.setItem(TOUR_DONE_KEY, "1")
-        onDone()
+      onDestroyed: finish,
+      onNextClick: () => {
+        const idx = driverObj!.getActiveIndex()
+        if (idx === 2) return goTo("/services")
+        if (idx === 3) return goTo("/poste_list")
+        if (idx === 4) return goTo("/staff")
+        driverObj!.moveNext()
       },
       steps: [
         {
           popover: {
-            title: "👋 Bienvenue sur SmartQueue !",
+            title: "Bienvenue sur SmartQueue",
             description:
-              "Ce guide rapide va vous aider à configurer votre espace en quelques étapes. Vous pouvez naviguer avec les boutons ci-dessous ou appuyer sur <kbd>→</kbd>.",
+              "Ce guide vous accompagne pas à pas pour configurer votre espace. Chaque étape demande une action de votre part.",
             side: "over",
             align: "center",
+            nextBtnText: "Démarrer la configuration",
           },
         },
         {
           element: "#tour-settings-btn",
           popover: {
-            title: "① Définissez votre URL publique",
+            title: "Étape 1 — Définissez votre URL publique",
             description:
-              "Cliquez sur cet engrenage pour donner un nom à votre page (ex : <b>mon-cabinet</b>).<br><br>C'est l'URL que vous partagerez à vos clients pour qu'ils prennent un ticket en ligne :<br><code>smartqueue.app/page/<b>mon-cabinet</b></code>",
+              "Cliquez sur ce bouton pour ouvrir les paramètres. Saisissez un nom unique pour votre page (ex. <code>mon-cabinet</code>), puis enregistrez. Ce sera l'URL partagée à vos clients.",
             side: "bottom",
             align: "end",
+            nextBtnText: "C'est fait, continuer",
           },
         },
         {
           element: "#tour-sidebar-services",
           popover: {
-            title: "② Créez vos services",
+            title: "Étape 2 — Créez vos services",
             description:
-              "Un <b>service</b> représente une activité de votre entreprise.<br><br>Exemples : <em>Consultation médicale</em>, <em>Caisse 1</em>, <em>Support technique</em>...<br><br>Chaque service dispose de sa propre file d'attente et d'un temps moyen de traitement.",
+              "Un service représente une activité de votre établissement (ex. Consultation, Caisse, Support). Cliquez sur <strong>Aller aux services</strong> pour en créer un — vous y serez guidé.",
             side: "right",
             align: "start",
+            nextBtnText: "Aller aux services",
           },
         },
         {
           element: "#tour-sidebar-postes",
           popover: {
-            title: "③ Créez vos postes de travail",
+            title: "Étape 3 — Créez vos postes de travail",
             description:
-              "Un <b>poste</b> est un point de traitement lié à un service.<br><br>Exemples : <em>Guichet 1</em>, <em>Cabinet Dr. Martin</em>, <em>Caisse express</em>...<br><br>Vos employés utilisent les postes pour appeler et traiter les clients un par un.",
+              "Un poste est un point de traitement lié à un service (ex. Guichet 1, Cabinet Dr. Martin). Vos employés y appellent les clients. Cliquez sur <strong>Aller aux postes</strong> pour en créer un.",
             side: "right",
             align: "start",
+            nextBtnText: "Aller aux postes",
           },
         },
         {
           element: "#tour-sidebar-staff",
           popover: {
-            title: "④ Ajoutez vos employés",
+            title: "Étape 4 — Ajoutez vos employés",
             description:
-              "Invitez vos employés par email et choisissez leur rôle :<br><ul style='margin-top:8px;padding-left:16px;'><li><b>Admin</b> — gère services et postes</li><li><b>Staff</b> — traite les tickets de ses postes assignés</li></ul><br>Assignez ensuite les postes à chaque employé pour restreindre leur accès.",
+              "Invitez vos employés par email et choisissez leur rôle : <strong>Admin</strong> (gère services et postes) ou <strong>Staff</strong> (traite les tickets de ses postes assignés). Cliquez sur <strong>Aller au staff</strong> pour les ajouter.",
             side: "right",
             align: "start",
+            nextBtnText: "Aller au staff",
           },
         },
         {
           popover: {
-            title: "✅ Vous êtes prêt !",
+            title: "Configuration terminée",
             description:
-              "Votre espace SmartQueue est configuré.<br><br>🔗 <b>Partagez votre URL publique</b> aux clients pour qu'ils prennent un ticket.<br>📺 <b>Projetez l'URL d'affichage</b> sur un écran en salle d'attente.<br>📅 <b>Gérez les rendez-vous</b> depuis la rubrique Rendez-vous.<br><br>Bonne gestion !",
+              "Votre espace est prêt.<br><br>Partagez votre <strong>URL publique</strong> à vos clients pour qu'ils prennent un ticket en ligne.<br>Projetez l'<strong>URL d'affichage</strong> sur un écran en salle d'attente.",
             side: "over",
             align: "center",
           },
@@ -90,12 +117,12 @@ export default function OnboardingTour({ active, onDone }: OnboardingTourProps) 
     })
 
     const timeout = setTimeout(() => {
-      driverObj.drive()
+      driverObj!.drive()
     }, 700)
 
     return () => {
       clearTimeout(timeout)
-      if (driverObj.isActive()) {
+      if (driverObj?.isActive()) {
         driverObj.destroy()
       }
     }

@@ -23,8 +23,8 @@ const page = () => {
       {
         element: '#tour-service-form',
         popover: {
-          title: '② Créez votre premier service',
-          description: 'Renseignez le <b>nom du service</b> et le <b>temps moyen de traitement</b> (en minutes), puis cliquez sur « Ajouter le service ».<br><br>Exemples : <em>Consultation — 15 min</em>, <em>Caisse — 5 min</em>.',
+          title: 'Créez votre premier service',
+          description: 'Renseignez le <strong>nom du service</strong> et le <strong>temps moyen de traitement</strong> en minutes, puis cliquez sur <em>Ajouter le service</em>.<br><br>Exemples : Consultation 15 min, Caisse 5 min.',
           side: 'right',
           align: 'start',
         },

@@ -28,8 +28,8 @@ const page = () => {
     {
       element: '#tour-staff-form',
       popover: {
-        title: '④ Ajoutez vos employés',
-        description: 'Renseignez l\'<b>email</b> et le <b>nom</b> de l\'employé, choisissez son rôle :<br><ul style="margin-top:8px;padding-left:16px;"><li><b>Admin</b> — gère services, postes et plannings</li><li><b>Staff</b> — traite uniquement les tickets des postes assignés</li></ul><br>Après l\'ajout, cliquez sur <b>Postes</b> en face de l\'employé pour lui assigner ses postes.',
+        title: 'Ajoutez votre premier employé',
+        description: 'Renseignez l\'<strong>email</strong> et le <strong>nom</strong> de l\'employé, choisissez son rôle :<br><ul style="margin-top:8px;padding-left:16px;"><li><strong>Admin</strong> — gère services, postes et plannings</li><li><strong>Staff</strong> — traite uniquement les tickets des postes assignés</li></ul><br>Une fois ajouté, cliquez sur <em>Postes</em> en face de l\'employé pour lui assigner ses postes.',
         side: 'right',
         align: 'start',
       },
