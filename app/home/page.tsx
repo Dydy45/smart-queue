@@ -10,6 +10,7 @@ import { Briefcase, Monitor, Copy, ExternalLink, CalendarDays } from "lucide-rea
 import OnboardingTour from "../components/OnboardingTour";
 import SetupChecklist from "../components/SetupChecklist";
 import SkeletonTicket from "../components/SkeletonTicket";
+import EmptyState from "../components/EmptyState";
 
 type AssignedPost = {
   id: string
@@ -109,8 +110,13 @@ export default function Home() {
   if (isRoleLoading) {
     return (
       <Wrapper>
-        <div className="flex justify-center items-center py-24">
-          <span className="loading loading-spinner loading-lg" role="status" aria-label="Chargement"></span>
+        <div className="space-y-4 mb-6">
+          <div className="skeleton h-28 w-full rounded-xl" />
+          <div className="skeleton h-28 w-full rounded-xl" />
+        </div>
+        <div className="skeleton h-8 w-64 rounded mb-6" />
+        <div className="grid grid-cols-1 gap-4">
+          <SkeletonTicket count={3} />
         </div>
       </Wrapper>
     )
@@ -281,6 +287,10 @@ export default function Home() {
 
           {isInitialLoad ? (
             <SkeletonTicket count={3} />
+          ) : tickets.length === 0 ? (
+            <div className="col-span-1">
+              <EmptyState IconComponent="Ticket" message="Aucun ticket en attente pour le moment" />
+            </div>
           ) : paginatedTickets.map((ticket) => {
             const actualIndex = tickets.findIndex(t => t.id === ticket.id)
             const totalWaitTime = tickets

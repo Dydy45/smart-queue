@@ -175,13 +175,6 @@ export default function SetupChecklist({ email, pageName }: SetupChecklistProps)
           />
         </div>
 
-        {/* Message de complétion */}
-        {allDone && !collapsed && (
-          <p className="text-sm text-success font-medium">
-            Votre espace est entièrement configuré. Bonne gestion !
-          </p>
-        )}
-
         {/* Liste des étapes */}
         {!allDone && !collapsed && (
           <ul className="space-y-2.5">
