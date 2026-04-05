@@ -8,7 +8,6 @@ import TicketComponent from "../components/TicketComponent";
 import Link from "next/link";
 import { Briefcase, Monitor, Copy, ExternalLink, CalendarDays } from "lucide-react";
 import OnboardingTour from "../components/OnboardingTour";
-import SetupChecklist from "../components/SetupChecklist";
 import SkeletonTicket from "../components/SkeletonTicket";
 import EmptyState from "../components/EmptyState";
 
@@ -65,18 +64,14 @@ export default function Home() {
     const fetchUserData = async () => {
       try {
         setIsRoleLoading(true)
-        const { role, pageName: pn } = await initUserSession(email, user?.fullName ?? '')
+        const { role, pageName: pn, isNewUser } = await initUserSession(email, user?.fullName ?? '')
         
         setUserRole(role)
         setPageName(pn)
 
-        // Afficher l'onboarding seulement à la première connexion OWNER
-        if (role === 'OWNER') {
-          const done = localStorage.getItem('sq_onboarding_done')
-          if (!done) {
-            localStorage.setItem('sq_onboarding_done', '1')
-            setShowOnboarding(true)
-          }
+        // Afficher l'onboarding seulement à la toute première inscription
+        if (isNewUser) {
+          setShowOnboarding(true)
         }
 
         // Si STAFF, récupérer ses postes assignés
@@ -171,11 +166,6 @@ export default function Home() {
     <Wrapper>
 
       <OnboardingTour active={showOnboarding} onDone={() => setShowOnboarding(false)} />
-
-      {/* Checklist de configuration — OWNER uniquement */}
-      {userRole === 'OWNER' && email && (
-        <SetupChecklist email={email} pageName={pageName} />
-      )}
 
       {/* Section Affichage Public TV */}
       {pageName && (userRole === 'OWNER' || userRole === 'ADMIN') && (

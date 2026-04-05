@@ -18,9 +18,10 @@ import {
  */
 export async function initUserSession(email: string, name: string): Promise<{
     role: 'OWNER' | 'ADMIN' | 'STAFF' | null,
-    pageName: string | null
+    pageName: string | null,
+    isNewUser: boolean
 }> {
-    if (!email) return { role: null, pageName: null }
+    if (!email) return { role: null, pageName: null, isNewUser: false }
     try {
         const validatedEmail = emailSchema.parse(email)
 
@@ -31,7 +32,7 @@ export async function initUserSession(email: string, name: string): Promise<{
         })
 
         if (existingCompany) {
-            return { role: 'OWNER' as const, pageName: existingCompany.pageName ?? null }
+            return { role: 'OWNER' as const, pageName: existingCompany.pageName ?? null, isNewUser: false }
         }
 
         // Vérifier si c'est un staff
@@ -42,10 +43,10 @@ export async function initUserSession(email: string, name: string): Promise<{
 
         if (existingStaff) {
             const role = existingStaff.role === 'ADMIN' ? 'ADMIN' as const : 'STAFF' as const
-            return { role, pageName: existingStaff.company?.pageName ?? null }
+            return { role, pageName: existingStaff.company?.pageName ?? null, isNewUser: false }
         }
 
-        // Nouveau propriétaire : créer l'entreprise (validation du nom uniquement ici)
+        // Nouveau propriétaire : créer l'entreprise
         if (name) {
             const validatedName = customerNameSchema.parse(name)
             await prisma.company.create({
@@ -53,10 +54,10 @@ export async function initUserSession(email: string, name: string): Promise<{
             })
         }
 
-        return { role: 'OWNER' as const, pageName: null }
+        return { role: 'OWNER' as const, pageName: null, isNewUser: true }
     } catch (error) {
         console.error('[initUserSession] Error:', error)
-        return { role: null, pageName: null }
+        return { role: null, pageName: null, isNewUser: false }
     }
 }
 
