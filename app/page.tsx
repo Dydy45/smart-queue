@@ -23,8 +23,11 @@ import {
   BookOpen,
   FileText,
   BadgeCheck,
+  CalendarDays,
 } from "lucide-react"
 import { useState } from "react"
+
+const ISS_PAGE_NAME = 'iss-kin'
 
 export default function LandingPage() {
   const [openFaq, setOpenFaq] = useState<number | null>(null)
@@ -266,8 +269,8 @@ export default function LandingPage() {
             — Scolarité, Finance, Bibliothèque — pour une expérience étudiante modernisée.
           </p>
 
-          <div className="flex flex-col sm:flex-row gap-3 justify-center mb-16">
-            <Link href="/sign-in" className="btn btn-primary btn-lg gap-2 shadow-lg shadow-primary/25">
+          <div className="flex flex-col sm:flex-row gap-3 justify-center mb-8">
+            <Link href="/sign-in" className="btn btn-ghost btn-lg gap-2">
               Accéder au portail
               <ArrowRight className="w-5 h-5" />
             </Link>
@@ -275,6 +278,27 @@ export default function LandingPage() {
               Découvrir comment ça marche
               <ChevronRight className="w-5 h-5" />
             </a>
+          </div>
+
+          {/* Accès rapide étudiants */}
+          <div className="inline-block bg-base-100 border border-base-300 rounded-2xl shadow-lg px-6 py-5 mb-16">
+            <p className="text-xs font-semibold text-base-content/50 uppercase tracking-widest mb-4">Vous êtes étudiant ISS/KIN ?</p>
+            <div className="flex flex-col sm:flex-row gap-3 justify-center">
+              <Link
+                href={`/page/${ISS_PAGE_NAME}`}
+                className="btn btn-primary btn-lg gap-2 shadow-lg shadow-primary/25"
+              >
+                <Ticket className="w-5 h-5" />
+                Prendre un ticket
+              </Link>
+              <Link
+                href={`/appointment/${ISS_PAGE_NAME}`}
+                className="btn btn-outline btn-lg gap-2"
+              >
+                <CalendarDays className="w-5 h-5" />
+                Prendre rendez-vous
+              </Link>
+            </div>
           </div>
 
           {/* Dashboard mockup */}
