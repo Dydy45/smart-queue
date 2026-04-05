@@ -70,10 +70,13 @@ export default function Home() {
         setUserRole(role)
         setPageName(pn)
 
-        // Afficher l'onboarding pour les nouveaux OWNER sans pageName
-        if (role === 'OWNER' && !pn) {
+        // Afficher l'onboarding seulement à la première connexion OWNER
+        if (role === 'OWNER') {
           const done = localStorage.getItem('sq_onboarding_done')
-          if (!done) setShowOnboarding(true)
+          if (!done) {
+            localStorage.setItem('sq_onboarding_done', '1')
+            setShowOnboarding(true)
+          }
         }
 
         // Si STAFF, récupérer ses postes assignés

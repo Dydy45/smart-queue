@@ -20,7 +20,7 @@ interface Counts {
 
 export default function SetupChecklist({ email, pageName }: SetupChecklistProps) {
   const [counts, setCounts] = useState<Counts | null>(null)
-  const [collapsed, setCollapsed] = useState(false)
+  const [collapsed, setCollapsed] = useState(true)
   const [visible, setVisible] = useState(true)
   const [hiding, setHiding] = useState(false)
 
