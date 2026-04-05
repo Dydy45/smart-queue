@@ -8,6 +8,7 @@ import { Service } from '../generated/prisma'
 import { Clock2, ClockArrowUp, Trash } from 'lucide-react'
 import EmptyState from '../components/EmptyState'
 import { usePageTour } from '@/lib/usePageTour'
+import SkeletonTable from '../components/SkeletonTable'
 
 const page = () => {
 
@@ -17,6 +18,7 @@ const page = () => {
     const [serviceName, setServiceName] = useState("")
     const [avgTime, setAvgTime] = useState(0)
     const [loading, setLoading] = useState<boolean>(false)
+    const [isInitialLoad, setIsInitialLoad] = useState<boolean>(true)
     const [services, setServices] = useState<Service[]>([])
 
     usePageTour('services', [
@@ -34,33 +36,40 @@ const page = () => {
     const handleCreateService = async () => {
         if (email && serviceName && avgTime > 0) {
           try {
+            setLoading(true)
             await createService(email, serviceName, avgTime)
             setAvgTime(0)
             setServiceName("")
-            fetchServices()
+            await fetchServices()
           } catch (error) {
             console.error("Error creating service:", error)
+          } finally {
+            setLoading(false)
           }
         }
     }
 
-    const fetchServices = async () => {
-      setLoading(true)
+    const fetchServices = async (isFirst = false) => {
+      if (isFirst) setLoading(true)
       try {
         if (email) {
           const serviceData = await getServiceByEmail(email)
           if (serviceData) {
             setServices(serviceData)
           }
-          setLoading(false)
         }
       } catch (error) {
         console.error("Error fetching services:", error)
+      } finally {
+        if (isFirst) {
+          setLoading(false)
+          setIsInitialLoad(false)
+        }
       }
     }
 
     useEffect(() => {
-      fetchServices()
+      if (email) fetchServices(true)
     // eslint-disable-next-line react-hooks/exhaustive-deps
     }, [email])
 
@@ -110,9 +119,13 @@ const page = () => {
         <div className='mt-4 md:mt-0 md:ml-4 md:w-3/4 md:border-l border-base-200 md:pl-4 w-full'>
           <h3 className='font-semibold'>Liste des services</h3>
 
-          {loading ? (
-            <div className='flex justify-center items-center w-full'>
-              <span className="loading loading-spinner loading-xs" role="status" aria-label="Chargement des services"></span>
+          {isInitialLoad ? (
+            <div className="overflow-x-auto">
+              <table className="table w-fit">
+                <tbody>
+                  <SkeletonTable rows={4} cols={[6, 48, 20, 10]} />
+                </tbody>
+              </table>
             </div>
           ) : services.length === 0 ?  (
             <div>

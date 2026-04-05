@@ -11,6 +11,7 @@ import { Trash } from 'lucide-react'
 import EmptyState from "../components/EmptyState";
 import Link from 'next/link'
 import { usePageTour } from '@/lib/usePageTour'
+import SkeletonCards from '../components/SkeletonCards'
 
 const page = () => {
 
@@ -20,6 +21,7 @@ const page = () => {
   const [newPostName, setNewPostName] = useState('');
   const [selectedServiceId, setSelectedServiceId] = useState('');
   const [loading, setLoading] = useState<boolean>(false)
+  const [isInitialLoad, setIsInitialLoad] = useState<boolean>(true)
 
   const [posts, setPosts] = useState<Post[]>([])
   const [services, setServices] = useState<Service[]>([])
@@ -62,6 +64,11 @@ const page = () => {
     }
   }
 
+  const fetchInitialData = async () => {
+    await Promise.all([fetchPosts(), fetchServices()])
+    setIsInitialLoad(false)
+  }
+
   const handleCreatePost = async() => {
     if(!newPostName || !selectedServiceId) return
     setLoading(true)
@@ -79,8 +86,7 @@ const page = () => {
   }
 
   useEffect (() => {
-    fetchPosts()
-    fetchServices()
+    if (email) fetchInitialData()
   } , [email])
 
   const handleDeletePost = async (postId: string) => {
@@ -125,7 +131,9 @@ const page = () => {
           </button>
         </div>
         <ul className='mt-4 md:mt-0 w-full grid md:grid-cols-3 gap-4'>
-          {posts.length > 0 ? (
+          {isInitialLoad ? (
+            <SkeletonCards count={3} />
+          ) : posts.length > 0 ? (
             posts.map((post) => (
               <li key={post.id} className='flex flex-col bg-base-200 p-5 rounded-lg'>
                 <div className='lowercase'>

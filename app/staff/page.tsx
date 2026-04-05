@@ -9,6 +9,7 @@ import { Trash, UserPlus, X } from 'lucide-react'
 import EmptyState from '../components/EmptyState'
 import { useToast } from '@/lib/useToast'
 import { usePageTour } from '@/lib/usePageTour'
+import SkeletonTable from '../components/SkeletonTable'
 
 const page = () => {
   const { user } = useUser()
@@ -19,6 +20,7 @@ const page = () => {
   const [posts, setPosts] = useState<Post[]>([])
   const [assignedPostsMap, setAssignedPostsMap] = useState<Record<string, Post[]>>({})
   const [loading, setLoading] = useState<boolean>(false)
+  const [isInitialLoad, setIsInitialLoad] = useState<boolean>(true)
   const [staffEmail, setStaffEmail] = useState('')
   const [staffName, setStaffName] = useState('')
   const [staffRole, setStaffRole] = useState<'ADMIN' | 'STAFF'>('STAFF')
@@ -36,8 +38,8 @@ const page = () => {
     },
   ], !!email)
 
-  const fetchStaff = async () => {
-    setLoading(true)
+  const fetchStaff = async (isFirst = false) => {
+    if (isFirst) setLoading(true)
     try {
       if (email) {
         const data = await getStaffByCompany(email)
@@ -53,7 +55,10 @@ const page = () => {
       console.error('Error fetching staff:', error)
       showError('Erreur lors du chargement des employés')
     } finally {
-      setLoading(false)
+      if (isFirst) {
+        setLoading(false)
+        setIsInitialLoad(false)
+      }
     }
   }
 
@@ -84,8 +89,10 @@ const page = () => {
   }
 
   useEffect(() => {
-    fetchStaff()
-    fetchPosts()
+    if (email) {
+      fetchStaff(true)
+      fetchPosts()
+    }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [email])
 
@@ -102,7 +109,7 @@ const page = () => {
       setStaffEmail('')
       setStaffName('')
       setStaffRole('STAFF')
-      fetchStaff()
+      await fetchStaff()
     } catch (error) {
       console.error('Error adding staff:', error)
       showError(error instanceof Error ? error.message : 'Erreur lors de l\'ajout de l\'employé')
@@ -234,9 +241,13 @@ const page = () => {
         <div className='mt-4 md:mt-0 md:ml-4 md:w-2/3 md:border-l border-base-200 md:pl-4 w-full'>
           <h3 className='font-semibold mb-4'>Liste des employés</h3>
 
-          {loading && staffList.length === 0 ? (
-            <div className='flex justify-center items-center w-full'>
-              <span className='loading loading-spinner loading-xs' role='status' aria-label='Chargement des employés'></span>
+          {isInitialLoad ? (
+            <div className='overflow-x-auto'>
+              <table className='table w-full'>
+                <tbody>
+                  <SkeletonTable rows={4} cols={[6, 20, 32, 16, 14]} />
+                </tbody>
+              </table>
             </div>
           ) : staffList.length === 0 ? (
             <EmptyState IconComponent='Users' message='Aucun employé pour le moment' />
