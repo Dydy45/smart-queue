@@ -9,6 +9,7 @@ import Link from "next/link";
 import { Briefcase, Monitor, Copy, ExternalLink, CalendarDays } from "lucide-react";
 import OnboardingTour from "../components/OnboardingTour";
 import SetupChecklist from "../components/SetupChecklist";
+import SkeletonTicket from "../components/SkeletonTicket";
 
 type AssignedPost = {
   id: string
@@ -23,6 +24,7 @@ export default function Home() {
   const email = user?.primaryEmailAddress?.emailAddress
   const [tickets, setTickets] = useState<Ticket[]>([])
   const [isLoading, setIsLoading] = useState(true)
+  const [isInitialLoad, setIsInitialLoad] = useState(true)
   const [currentPage, setCurrentPage] = useState(1)
   const [userRole, setUserRole] = useState<'OWNER' | 'ADMIN' | 'STAFF' | null>(null)
   const [isRoleLoading, setIsRoleLoading] = useState(true)
@@ -92,7 +94,10 @@ export default function Home() {
     if (!email) return
 
     setIsLoading(true)
-    fetchTickets().finally(() => setIsLoading(false))
+    fetchTickets().finally(() => {
+      setIsLoading(false)
+      setIsInitialLoad(false)
+    })
 
     const interval = setInterval(fetchTickets, 5000)
     return () => clearInterval(interval)
@@ -258,10 +263,10 @@ export default function Home() {
       <div className="flex justify-between items-center mb-4">
         <h1 className="text-2xl font-bold">Tableau de bord - Tous les tickets</h1>
         <div className="flex items-center gap-2">
-          {isLoading && (
+          {isLoading && !isInitialLoad && (
             <span className='loading loading-spinner loading-sm' role="status" aria-label="Chargement des tickets"></span>
           )}
-          {!isLoading && (
+          {!isInitialLoad && (
             <>
               <span className="relative flex size-3">
                 <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-accent/30 opacity-75"></span>
@@ -274,7 +279,9 @@ export default function Home() {
       </div>
         <div className="grid grid-cols-1 gap-4">
 
-          {paginatedTickets.map((ticket) => {
+          {isInitialLoad ? (
+            <SkeletonTicket count={3} />
+          ) : paginatedTickets.map((ticket) => {
             const actualIndex = tickets.findIndex(t => t.id === ticket.id)
             const totalWaitTime = tickets
               .slice(0, actualIndex)
