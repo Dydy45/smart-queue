@@ -1,7 +1,6 @@
 "use client"
 
 import Link from "next/link"
-import { getPublicPageName } from "./actions"
 import {
   AudioWaveform,
   CheckCircle2,
@@ -34,7 +33,10 @@ export default function LandingPage() {
   const [publicPageName, setPublicPageName] = useState<string | null>(null)
 
   useEffect(() => {
-    getPublicPageName().then(setPublicPageName)
+    fetch('/api/public-pagename')
+      .then(r => r.json())
+      .then(data => setPublicPageName(data.pageName))
+      .catch(() => {})
   }, [])
 
   const navLinks = [
