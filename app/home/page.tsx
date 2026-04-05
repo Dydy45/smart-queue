@@ -6,7 +6,7 @@ import { useEffect, useMemo, useState } from "react";
 import { Ticket } from "../type";
 import TicketComponent from "../components/TicketComponent";
 import Link from "next/link";
-import { Briefcase, Monitor, Copy, ExternalLink, CalendarDays } from "lucide-react";
+import { Briefcase, Monitor, Copy, ExternalLink, CalendarDays, QrCode, Users } from "lucide-react";
 import OnboardingTour from "../components/OnboardingTour";
 import SkeletonTicket from "../components/SkeletonTicket";
 import EmptyState from "../components/EmptyState";
@@ -32,6 +32,7 @@ export default function Home() {
   const [pageName, setPageName] = useState<string | null>(null)
   const [displayUrlCopied, setDisplayUrlCopied] = useState(false)
   const [appointmentUrlCopied, setAppointmentUrlCopied] = useState(false)
+  const [ticketUrlCopied, setTicketUrlCopied] = useState(false)
   const [showOnboarding, setShowOnboarding] = useState(false)
   const TICKETS_PER_PAGE = 10
 
@@ -207,6 +208,65 @@ export default function Home() {
                   <ExternalLink className="w-4 h-4" />
                   Ouvrir
                 </a>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Section Portail Étudiants — URL de prise de ticket */}
+      {pageName && (userRole === 'OWNER' || userRole === 'ADMIN') && (
+        <div className="card bg-primary/5 border border-primary/20 mb-6">
+          <div className="card-body py-4">
+            <div className="flex items-center gap-2 mb-2">
+              <Users className="w-5 h-5 text-primary" />
+              <h2 className="font-bold text-lg">Portail Étudiants</h2>
+              <span className="badge badge-primary badge-sm">À partager</span>
+            </div>
+            <p className="text-sm text-base-content/60 mb-3">
+              Partagez cette URL ou affichez le QR code pour que les étudiants puissent prendre un ticket depuis leur smartphone.
+            </p>
+            <div className="flex flex-col sm:flex-row gap-4 items-start">
+              <div className="flex-1 space-y-2">
+                <input
+                  type="text"
+                  value={`${typeof window !== 'undefined' ? window.location.origin : ''}/page/${pageName}`}
+                  readOnly
+                  className="input input-bordered input-sm w-full font-mono text-sm"
+                  aria-label="URL portail étudiants"
+                />
+                <div className="flex gap-2">
+                  <button
+                    onClick={() => {
+                      navigator.clipboard.writeText(`${window.location.origin}/page/${pageName}`)
+                      setTicketUrlCopied(true)
+                      setTimeout(() => setTicketUrlCopied(false), 2000)
+                    }}
+                    className="btn btn-sm btn-outline gap-1"
+                  >
+                    <Copy className="w-4 h-4" />
+                    {ticketUrlCopied ? 'Copié !' : 'Copier'}
+                  </button>
+                  <a
+                    href={`/page/${pageName}`}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="btn btn-sm btn-primary gap-1"
+                  >
+                    <ExternalLink className="w-4 h-4" />
+                    Ouvrir
+                  </a>
+                </div>
+              </div>
+              <div className="shrink-0 flex flex-col items-center gap-1">
+                <img
+                  src={`https://api.qrserver.com/v1/create-qr-code/?size=100x100&data=${encodeURIComponent(
+                    typeof window !== 'undefined' ? `${window.location.origin}/page/${pageName}` : ''
+                  )}`}
+                  alt="QR Code portail étudiants"
+                  className="w-24 h-24 rounded-lg border border-base-300 bg-white p-1"
+                />
+                <span className="text-xs text-base-content/50">Scanner pour accéder</span>
               </div>
             </div>
           </div>
