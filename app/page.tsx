@@ -1,6 +1,7 @@
 "use client"
 
 import Link from "next/link"
+import { getPublicPageName } from "./actions"
 import {
   AudioWaveform,
   CheckCircle2,
@@ -25,13 +26,16 @@ import {
   BadgeCheck,
   CalendarDays,
 } from "lucide-react"
-import { useState } from "react"
-
-const ISS_PAGE_NAME = 'iss-kin'
+import { useState, useEffect } from "react"
 
 export default function LandingPage() {
   const [openFaq, setOpenFaq] = useState<number | null>(null)
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false)
+  const [publicPageName, setPublicPageName] = useState<string | null>(null)
+
+  useEffect(() => {
+    getPublicPageName().then(setPublicPageName)
+  }, [])
 
   const navLinks = [
     { href: "#features", label: "Fonctionnalités" },
@@ -284,20 +288,35 @@ export default function LandingPage() {
           <div className="inline-block bg-base-100 border border-base-300 rounded-2xl shadow-lg px-6 py-5 mb-16">
             <p className="text-xs font-semibold text-base-content/50 uppercase tracking-widest mb-4">Vous êtes étudiant ISS/KIN ?</p>
             <div className="flex flex-col sm:flex-row gap-3 justify-center">
-              <Link
-                href={`/page/${ISS_PAGE_NAME}`}
-                className="btn btn-primary btn-lg gap-2 shadow-lg shadow-primary/25"
-              >
-                <Ticket className="w-5 h-5" />
-                Prendre un ticket
-              </Link>
-              <Link
-                href={`/appointment/${ISS_PAGE_NAME}`}
-                className="btn btn-outline btn-lg gap-2"
-              >
-                <CalendarDays className="w-5 h-5" />
-                Prendre rendez-vous
-              </Link>
+              {publicPageName ? (
+                <>
+                  <Link
+                    href={`/page/${publicPageName}`}
+                    className="btn btn-primary btn-lg gap-2 shadow-lg shadow-primary/25"
+                  >
+                    <Ticket className="w-5 h-5" />
+                    Prendre un ticket
+                  </Link>
+                  <Link
+                    href={`/appointment/${publicPageName}`}
+                    className="btn btn-outline btn-lg gap-2"
+                  >
+                    <CalendarDays className="w-5 h-5" />
+                    Prendre rendez-vous
+                  </Link>
+                </>
+              ) : (
+                <>
+                  <button className="btn btn-primary btn-lg gap-2" disabled>
+                    <span className="loading loading-spinner loading-sm" />
+                    Prendre un ticket
+                  </button>
+                  <button className="btn btn-outline btn-lg gap-2" disabled>
+                    <span className="loading loading-spinner loading-sm" />
+                    Prendre rendez-vous
+                  </button>
+                </>
+              )}
             </div>
           </div>
 

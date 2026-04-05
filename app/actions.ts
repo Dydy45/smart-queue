@@ -287,6 +287,22 @@ export async function setCompanyPageName(email: string, pageName: string) {
 
 }
 
+/**
+ * Retourne le pageName configuré de l'organisation (accès public, sans authentification).
+ * Utilisé par la landing page pour construire les liens étudiants dynamiquement.
+ */
+export async function getPublicPageName(): Promise<string | null> {
+    try {
+        const company = await prisma.company.findFirst({
+            select: { pageName: true },
+            where: { pageName: { not: null } },
+        })
+        return company?.pageName ?? null
+    } catch {
+        return null
+    }
+}
+
 export async function getServicesByPageName(pageName: string) {
     try {
         // Validation
