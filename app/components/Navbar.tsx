@@ -40,9 +40,12 @@ const Navbar: React.FC<NavbarProps> = ({ email, pageName, onPageNameChange, onMo
                         <Menu className="w-5 h-5" />
                     </button>
 
-                    <div className="flex items-center gap-1">
+                    <div className="flex items-center gap-2">
                         <AudioWaveform className="w-6 h-6 text-primary" />
-                        <span className="font-bold text-xl">SmartQueue</span>
+                        <div className="flex flex-col leading-tight">
+                            <span className="font-bold text-base leading-none">SmartQueue</span>
+                            <span className="text-xs text-primary/70 font-semibold leading-none tracking-wide">ISS/KIN</span>
+                        </div>
                     </div>
                 </div>
 

@@ -10,10 +10,7 @@ import {
   Shield,
   Smartphone,
   Zap,
-  Building2,
-  Hospital,
   Landmark,
-  Scissors,
   ArrowRight,
   Star,
   Menu,
@@ -22,6 +19,10 @@ import {
   Ticket,
   UserCheck,
   Globe,
+  GraduationCap,
+  BookOpen,
+  FileText,
+  BadgeCheck,
 } from "lucide-react"
 import { useState } from "react"
 
@@ -32,163 +33,144 @@ export default function LandingPage() {
   const navLinks = [
     { href: "#features", label: "Fonctionnalités" },
     { href: "#how-it-works", label: "Comment ça marche" },
-    { href: "#pricing", label: "Tarifs" },
+    { href: "#services", label: "Nos services" },
     { href: "#faq", label: "FAQ" },
   ]
 
   const features = [
     {
       icon: <Users className="w-6 h-6" />,
-      title: "Gestion multi-services",
-      description: "Créez et gérez plusieurs services avec des temps de traitement personnalisés pour chaque file."
+      title: "Multi-services universitaires",
+      description: "Scolarité, Finance, Bibliothèque, Examens — chaque département gère sa propre file d’attente.",
     },
     {
       icon: <BarChart3 className="w-6 h-6" />,
       title: "Tableau de bord analytique",
-      description: "Visualisez les performances en temps réel : tickets traités, temps moyen, taux de satisfaction."
+      description: "Visualisez les flux en temps réel : tickets traités, temps d’attente moyen, charge par service.",
     },
     {
       icon: <Shield className="w-6 h-6" />,
-      title: "Sécurité & rôles",
-      description: "Système de permissions granulaire avec 3 niveaux : Propriétaire, Administrateur, Employé."
+      title: "Accès sécurisé par rôle",
+      description: "3 niveaux d’accès distincts : Direction (DSI), Responsable de service, Agent de guichet.",
     },
     {
       icon: <Zap className="w-6 h-6" />,
-      title: "Mises à jour temps réel",
-      description: "Les files se mettent à jour automatiquement toutes les 5 secondes, sans rafraîchir la page."
+      title: "Temps réel sans rechargement",
+      description: "Les files se mettent à jour automatiquement toutes les 5 secondes sur tous les écrans.",
     },
     {
       icon: <Smartphone className="w-6 h-6" />,
-      title: "100% responsive",
-      description: "Interface optimisée pour mobile, tablette et desktop. Vos clients et employés accèdent de partout."
+      title: "Ticket depuis son smartphone",
+      description: "Les étudiants prennent leur ticket en ligne et arrivent juste à temps, sans faire la queue.",
     },
     {
       icon: <Clock className="w-6 h-6" />,
-      title: "Estimation des temps",
-      description: "Chaque client voit son temps d&apos;attente estimé en temps réel, réduisant la frustration."
+      title: "Estimation du temps d’attente",
+      description: "Chaque étudiant voit son temps d’attente estimé, éliminant l’incertitude et la frustration.",
     }
   ]
 
   const steps = [
     {
       icon: <Ticket className="w-7 h-7" />,
-      title: "Créez vos services",
-      description: "Définissez vos services (consultation, guichet, rdv...) avec un temps moyen de traitement."
+      title: "Configurer les services",
+      description: "La DSI définit les services administratifs (Scolarité, Finance…) et les guichets de traitement.",
     },
     {
       icon: <UserCheck className="w-7 h-7" />,
-      title: "Assignez vos équipes",
-      description: "Créez des postes, invitez vos employés et assignez-les aux services appropriés."
+      title: "Affecter les agents",
+      description: "Les responsables assignent les agents administratifs à leurs postes de travail spécifiques.",
     },
     {
       icon: <Globe className="w-7 h-7" />,
-      title: "Partagez votre page",
-      description: "Vos clients accèdent à votre page publique personnalisée pour prendre un ticket en un clic."
+      title: "Les étudiants prennent un ticket",
+      description: "Via l’URL publique ISS/KIN, les étudiants rejoignent la file et suivent leur position en temps réel.",
     }
   ]
 
   const useCases = [
     {
-      icon: <Hospital className="w-10 h-10" />,
-      title: "Santé",
-      examples: ["Cabinets médicaux", "Cliniques", "Laboratoires"],
+      icon: <GraduationCap className="w-10 h-10" />,
+      title: "Scolarité",
+      examples: ["Inscriptions & réinscriptions", "Relevés de notes", "Attestations"],
       color: "text-primary",
       bg: "bg-primary/10"
     },
     {
       icon: <Landmark className="w-10 h-10" />,
-      title: "Administration",
-      examples: ["Mairies", "Préfectures", "Agences"],
+      title: "Finance",
+      examples: ["Frais académiques", "Quittances de paiement", "Bourses étudiantes"],
       color: "text-secondary",
       bg: "bg-secondary/10"
     },
     {
-      icon: <Building2 className="w-10 h-10" />,
-      title: "Finance",
-      examples: ["Banques", "Assurances", "Comptables"],
+      icon: <BookOpen className="w-10 h-10" />,
+      title: "Bibliothèque",
+      examples: ["Prêt de documents", "Réservations", "Retours & prolongations"],
       color: "text-accent",
       bg: "bg-accent/10"
     },
     {
-      icon: <Scissors className="w-10 h-10" />,
-      title: "Services",
-      examples: ["Salons de coiffure", "Garages auto", "Ateliers"],
+      icon: <FileText className="w-10 h-10" />,
+      title: "Examens",
+      examples: ["Affichage des résultats", "Réclamations", "Attestations de réussite"],
       color: "text-info",
       bg: "bg-info/10"
     }
   ]
 
-  const pricingPlans = [
+  const accessRoles = [
     {
-      name: "Gratuit",
-      price: "0",
-      description: "Idéal pour tester la plateforme et les petites structures.",
-      features: [
-        "1 service",
-        "1 poste",
-        "Page publique personnalisée",
-        "Tableau de bord basique",
-      ],
-      cta: "Commencer gratuitement",
-      highlighted: false,
+      badge: "DSI / Direction",
+      role: "OWNER",
+      color: "badge-primary",
+      border: "border-primary/20",
+      description: "Configuration globale du système, gestion de tous les services, agents et analytiques.",
+      perks: ["Services illimités", "Postes illimités", "Gestion des comptes agents", "Analytics institutionnels"],
     },
     {
-      name: "Pro",
-      price: "29",
-      oldPrice: "49",
-      description: "Pour les entreprises qui veulent aller plus loin.",
-      features: [
-        "Services illimités",
-        "Jusqu\u0027à 10 postes",
-        "Gestion des rôles (Admin, Staff)",
-        "Statistiques avancées",
-        "Support prioritaire",
-      ],
-      cta: "Essayer 14 jours gratuit",
+      badge: "Responsable de service",
+      role: "ADMIN",
+      color: "badge-secondary",
+      border: "border-secondary/20",
+      description: "Gestion de son département : postes, agents assignés et suivi de la charge.",
+      perks: ["Gestion de son service", "Affectation des agents", "Statistiques du service", "Rendez-vous planifiés"],
       highlighted: true,
     },
     {
-      name: "Entreprise",
-      price: "79",
-      oldPrice: "129",
-      description: "Solution complète pour les grandes organisations.",
-      features: [
-        "Tout du plan Pro",
-        "Postes illimités",
-        "Multi-sites",
-        "API & intégrations",
-        "Support dédié 24/7",
-        "Formation personnalisée",
-      ],
-      cta: "Contacter l\u0027équipe",
-      highlighted: false,
-    }
+      badge: "Agent administratif",
+      role: "STAFF",
+      color: "badge-accent",
+      border: "border-accent/20",
+      description: "Traitement des tickets sur ses postes assignés, appel des étudiants en file.",
+      perks: ["Vue de ses postes assignés", "Appel du ticket suivant", "Historique des traitements", "Interface mobile-first"],
+    },
   ]
 
   const faqs = [
     {
-      question: "Comment créer mon premier service ?",
-      answer: "Après inscription, accédez à « Vos services », cliquez sur « Créer un service », renseignez le nom et le temps moyen de traitement. Votre service est prêt en moins d\u0027une minute !"
+      question: "Comment un étudiant prend-il un ticket ?",
+      answer: "L’étudiant accède à l’URL publique ISS/KIN depuis son smartphone ou un ordinateur. Il sélectionne le service souhaité (ex : Scolarité), saisit son nom, et reçoit instantanément un numéro de ticket avec le temps d’attente estimé.",
     },
     {
-      question: "Puis-je avoir plusieurs employés sur un même poste ?",
-      answer: "Oui ! Vous pouvez assigner plusieurs employés (STAFF) à un même poste. Ils verront tous les tickets du service lié à ce poste et pourront les traiter en parallèle."
+      question: "Les agents administratifs voient-ils tous les tickets de l’ISS/KIN ?",
+      answer: "Non : chaque agent ne voit que les tickets des postes qui lui sont assignés par son responsable de service. Cela garantit la confidentialité et la bonne organisation par département.",
     },
     {
-      question: "Les données sont-elles sécurisées ?",
-      answer: "Absolument. Nous utilisons Clerk pour l\u0027authentification avec chiffrement de bout en bout, et Prisma ORM pour prévenir les injections SQL. Vos données sont stockées de manière sécurisée et conforme au RGPD."
+      question: "Les données des étudiants sont-elles sécurisées ?",
+      answer: "Oui. Le système utilise Clerk pour l’authentification avec chiffrement de bout en bout, et Prisma ORM pour prévenir les injections SQL. Seuls les membres autorisés de l’ISS/KIN accèdent aux données.",
     },
     {
-      question: "Puis-je personnaliser la page client ?",
-      answer: "Oui, vous pouvez définir un nom de page personnalisé (ex : « cabinet-medical ») accessible via /page/votre-nom. Vos clients y accèdent directement pour prendre un ticket."
+      question: "Comment fonctionne l’écran d’affichage en salle d’attente ?",
+      answer: "La DSI configure une URL publique unique (ex : « iss-kin »). L’URL de display est projetée sur un écran TV en salle d’attente et se met à jour en temps réel, affichant le numéro appelé et le guichet correspondant.",
     },
     {
-      question: "Comment mes employés accèdent-ils à leurs postes ?",
-      answer: "Chaque employé se connecte avec son email. Il voit automatiquement ses postes assignés sur la page d\u0027accueil et peut cliquer dessus pour commencer à traiter les tickets."
+      question: "Un responsable de service peut-il gérer plusieurs départements ?",
+      answer: "Actuellement un compte ADMIN gère le périmètre que lui a accordé la Direction. La Direction (OWNER) a, elle, une vue globale sur l’ensemble des services et des statistiques de l’institution.",
     },
     {
-      question: "Y a-t-il une limite de tickets ?",
-      answer: "Non, vous pouvez gérer autant de tickets que nécessaire. Le système est conçu pour supporter des volumes importants avec des mises à jour en temps réel."
+      question: "Peut-on prendre un rendez-vous en dehors des heures d’affluence ?",
+      answer: "Oui ! En plus des tickets instantanés, le système propose un module de rendez-vous planifiés. Les étudiants choisissent un créneau et reçoivent une confirmation, évitant ainsi les pics d’affluence.",
     }
   ]
 
@@ -198,11 +180,14 @@ export default function LandingPage() {
       {/* ===== NAVBAR ===== */}
       <nav className="navbar sticky top-0 z-50 bg-base-100/80 backdrop-blur-lg border-b border-base-200 px-5 md:px-[10%]">
         <div className="flex-1">
-          <Link href="/" className="flex items-center gap-2.5 group" aria-label="SmartQueue - Accueil">
+          <Link href="/" className="flex items-center gap-2.5 group" aria-label="SmartQueue ISS/KIN - Accueil">
             <div className="rounded-xl p-2 bg-primary/10 group-hover:bg-primary/20 transition-colors">
               <AudioWaveform className="w-5 h-5 text-primary" />
             </div>
-            <span className="font-bold text-lg tracking-tight">SmartQueue</span>
+            <div className="flex flex-col leading-tight">
+              <span className="font-bold text-base tracking-tight leading-none">SmartQueue</span>
+              <span className="text-xs text-primary/70 font-semibold leading-none tracking-wide">ISS/KIN</span>
+            </div>
           </Link>
         </div>
 
@@ -220,8 +205,8 @@ export default function LandingPage() {
           <Link href="/sign-in" className="btn btn-ghost btn-sm">
             Connexion
           </Link>
-          <Link href="/sign-up" className="btn btn-primary btn-sm">
-            Essayer gratuitement
+          <Link href="/sign-in" className="btn btn-primary btn-sm">
+            Accéder au portail
           </Link>
         </div>
 
@@ -250,8 +235,8 @@ export default function LandingPage() {
             <Link href="/sign-in" className="btn btn-ghost justify-start">
               Connexion
             </Link>
-            <Link href="/sign-up" className="btn btn-primary">
-              Essayer gratuitement
+            <Link href="/sign-in" className="btn btn-primary">
+              Accéder au portail
             </Link>
           </div>
         )}
@@ -267,23 +252,23 @@ export default function LandingPage() {
         <div className="max-w-5xl mx-auto text-center">
           <div className="inline-flex items-center gap-2 bg-primary/10 text-primary rounded-full px-4 py-1.5 text-sm font-medium mb-8">
             <Star className="w-4 h-4 fill-primary" />
-            <span>Solution #1 de gestion de files d&apos;attente</span>
+            <span>Système officiel de gestion des files d’attente — ISS/KIN</span>
           </div>
 
           <h1 className="text-4xl sm:text-5xl md:text-6xl lg:text-7xl font-extrabold tracking-tight mb-6 leading-[1.1]">
-            Transformez vos{" "}
-            <span className="text-primary">files d&apos;attente</span>{" "}
-            en expérience fluide
+            Fluidifiez les{" "}
+            <span className="text-primary">services administratifs</span>{" "}
+            de l&apos;ISS/KIN
           </h1>
 
           <p className="text-lg md:text-xl text-base-content/60 max-w-2xl mx-auto mb-10 leading-relaxed">
-            Digitalisez la gestion de vos files d&apos;attente, optimisez votre organisation
-            et offrez à vos clients une expérience d&apos;accueil exceptionnelle.
+            SmartQueue ISS/KIN digitalise et organise les files d&apos;attente de tous vos services
+            — Scolarité, Finance, Bibliothèque — pour une expérience étudiante modernisée.
           </p>
 
           <div className="flex flex-col sm:flex-row gap-3 justify-center mb-16">
-            <Link href="/sign-up" className="btn btn-primary btn-lg gap-2 shadow-lg shadow-primary/25">
-              Commencer gratuitement
+            <Link href="/sign-in" className="btn btn-primary btn-lg gap-2 shadow-lg shadow-primary/25">
+              Accéder au portail
               <ArrowRight className="w-5 h-5" />
             </Link>
             <a href="#how-it-works" className="btn btn-ghost btn-lg gap-2">
@@ -303,7 +288,7 @@ export default function LandingPage() {
                 </div>
                 <div className="flex-1 flex justify-center">
                   <div className="bg-base-200 rounded-md px-4 py-1 text-xs text-base-content/40 font-mono">
-                    smartqueue.app/dashboard
+                    iss-kin.smartqueue.app/home
                   </div>
                 </div>
               </div>
@@ -344,10 +329,10 @@ export default function LandingPage() {
         <div className="max-w-6xl mx-auto">
           <div className="text-center mb-14">
             <h2 className="text-3xl md:text-4xl font-bold mb-4">
-              Pourquoi SmartQueue ?
+              Pourquoi SmartQueue ISS/KIN ?
             </h2>
             <p className="text-base-content/60 max-w-xl mx-auto">
-              Découvrez comment nous transformons un problème quotidien en avantage compétitif.
+              Voyez concrètement ce que le système change pour les étudiants et le personnel administratif.
             </p>
           </div>
 
@@ -355,14 +340,14 @@ export default function LandingPage() {
             <div className="card bg-base-100 border border-error/20 shadow-sm">
               <div className="card-body">
                 <h3 className="card-title text-error text-xl mb-4">
-                  Sans SmartQueue
+                  Sans SmartQueue ISS/KIN
                 </h3>
                 <ul className="space-y-3">
                   {[
-                    "Clients frustrés par des temps d\u0027attente imprévisibles",
-                    "Personnel débordé et désorganisé",
-                    "Aucune visibilité sur l\u0027état de la file",
-                    "Gestion manuelle source d\u0027erreurs",
+                    "Étudiants frustrés par des files imprévisibles",
+                    "Agents surchargés sans visibilité sur la charge",
+                    "Aucune traçabilité des demandes administratives",
+                    "Gestion papier source d’erreurs et de litiges",
                   ].map((item, i) => (
                     <li key={i} className="flex items-start gap-3">
                       <X className="w-5 h-5 text-error shrink-0 mt-0.5" />
@@ -376,14 +361,14 @@ export default function LandingPage() {
             <div className="card bg-base-100 border border-success/20 shadow-sm">
               <div className="card-body">
                 <h3 className="card-title text-success text-xl mb-4">
-                  Avec SmartQueue
+                  Avec SmartQueue ISS/KIN
                 </h3>
                 <ul className="space-y-3">
                   {[
-                    "Digitalisation complète avec estimation des temps",
-                    "Organisation optimale du personnel par poste",
-                    "Statistiques et visibilité en temps réel",
-                    "Interface intuitive, zéro formation requise",
+                    "Ticket numérique en ligne avec estimation du temps",
+                    "Agents organisés par poste avec visibilité en temps réel",
+                    "Historique complet de toutes les demandes",
+                    "Interface intuitive, déploiement en quelques minutes",
                   ].map((item, i) => (
                     <li key={i} className="flex items-start gap-3">
                       <CheckCircle2 className="w-5 h-5 text-success shrink-0 mt-0.5" />
@@ -402,10 +387,10 @@ export default function LandingPage() {
         <div className="max-w-6xl mx-auto">
           <div className="text-center mb-14">
             <h2 className="text-3xl md:text-4xl font-bold mb-4">
-              Tout ce dont vous avez besoin
+              Conçu pour l’université
             </h2>
             <p className="text-base-content/60 max-w-xl mx-auto">
-              Des fonctionnalités puissantes pensées pour simplifier votre quotidien.
+              Des fonctionnalités pensées spécifiquement pour les besoins administratifs de l’ISS/KIN.
             </p>
           </div>
 
@@ -433,10 +418,10 @@ export default function LandingPage() {
         <div className="max-w-4xl mx-auto">
           <div className="text-center mb-14">
             <h2 className="text-3xl md:text-4xl font-bold mb-4">
-              Prêt en 3 étapes
+              Opérationnel en 3 étapes
             </h2>
             <p className="text-base-content/60 max-w-xl mx-auto">
-              Configurez votre système de gestion de files d&apos;attente en quelques minutes.
+              La DSI configure l’espace en quelques minutes. Les services sont immédiatement actifs.
             </p>
           </div>
 
@@ -465,10 +450,10 @@ export default function LandingPage() {
         <div className="max-w-6xl mx-auto">
           <div className="text-center mb-14">
             <h2 className="text-3xl md:text-4xl font-bold mb-4">
-              Adapté à tous les secteurs
+              Nos services administratifs
             </h2>
             <p className="text-base-content/60 max-w-xl mx-auto">
-              Quelle que soit votre activité, SmartQueue s&apos;adapte à vos besoins.
+              Chaque département de l’ISS/KIN dispose de sa propre file gérée indépendamment.
             </p>
           </div>
 
@@ -495,63 +480,56 @@ export default function LandingPage() {
         </div>
       </section>
 
-      {/* ===== PRICING ===== */}
-      <section id="pricing" className="px-5 md:px-[10%] py-20 bg-base-200/50 scroll-mt-20">
+      {/* ===== ACCÈS INSTITUTIONNEL ===== */}
+      <section id="acces" className="px-5 md:px-[10%] py-20 bg-base-200/50 scroll-mt-20">
         <div className="max-w-6xl mx-auto">
           <div className="text-center mb-14">
             <h2 className="text-3xl md:text-4xl font-bold mb-4">
-              Tarifs transparents
+              Accès réservé à l&apos;ISS/KIN
             </h2>
             <p className="text-base-content/60 max-w-xl mx-auto">
-              Des prix flexibles, sans frais cachés. Évoluez selon vos besoins.
+              Ce système est exclusivement destiné aux membres de l’Institut Supérieur des Statistiques de Kinshasa.
+              Chaque profil dispose d’un périmètre d’accès adapté à ses responsabilités.
             </p>
           </div>
 
           <div className="grid md:grid-cols-3 gap-6 items-start">
-            {pricingPlans.map((plan, index) => (
+            {accessRoles.map((item, index) => (
               <div
                 key={index}
                 className={`card bg-base-100 border shadow-sm transition-all duration-300 hover:shadow-lg ${
-                  plan.highlighted
-                    ? "border-primary shadow-primary/10 scale-[1.02] md:scale-105"
-                    : "border-base-200"
+                  item.highlighted
+                    ? "border-secondary shadow-secondary/10 scale-[1.02] md:scale-105"
+                    : item.border
                 }`}
               >
-                {plan.highlighted && (
-                  <div className="bg-primary text-primary-content text-center py-2 text-sm font-semibold rounded-t-2xl">
-                    Le plus populaire
+                {item.highlighted && (
+                  <div className="bg-secondary text-secondary-content text-center py-2 text-sm font-semibold rounded-t-2xl">
+                    Responsable de service
                   </div>
                 )}
                 <div className="card-body">
-                  <h3 className="text-xl font-bold">{plan.name}</h3>
-                  <p className="text-sm text-base-content/60 mb-4">{plan.description}</p>
-
-                  <div className="flex items-baseline gap-1 mb-6">
-                    {plan.oldPrice && (
-                      <span className="text-base-content/40 line-through text-lg">${plan.oldPrice}</span>
-                    )}
-                    <span className="text-4xl font-extrabold">${plan.price}</span>
-                    <span className="text-base-content/50 text-sm">/mois</span>
-                  </div>
-
-                  <ul className="space-y-3 mb-6 flex-1">
-                    {plan.features.map((feature, i) => (
+                  <span className={`badge ${item.color} badge-lg self-start mb-2`}>{item.role}</span>
+                  <h3 className="text-xl font-bold">{item.badge}</h3>
+                  <p className="text-sm text-base-content/60 mb-4">{item.description}</p>
+                  <ul className="space-y-2.5 flex-1">
+                    {item.perks.map((perk, i) => (
                       <li key={i} className="flex items-start gap-2.5">
-                        <CheckCircle2 className="w-4.5 h-4.5 text-primary shrink-0 mt-0.5" />
-                        <span className="text-sm text-base-content/70">{feature}</span>
+                        <BadgeCheck className="w-4 h-4 text-primary shrink-0 mt-0.5" />
+                        <span className="text-sm text-base-content/70">{perk}</span>
                       </li>
                     ))}
                   </ul>
-
-                  <Link
-                    href="/sign-up"
-                    className={`btn w-full ${plan.highlighted ? "btn-primary" : "btn-outline"}`}
-                  >
-                    {plan.cta}
-                  </Link>
                 </div>
               </div>
             ))}
+          </div>
+
+          <div className="text-center mt-10">
+            <Link href="/sign-in" className="btn btn-primary btn-lg gap-2 shadow-lg shadow-primary/25">
+              Accéder au portail ISS/KIN
+              <ArrowRight className="w-5 h-5" />
+            </Link>
           </div>
         </div>
       </section>
@@ -564,7 +542,7 @@ export default function LandingPage() {
               Questions fréquentes
             </h2>
             <p className="text-base-content/60 max-w-xl mx-auto">
-              Tout ce que vous devez savoir pour bien démarrer avec SmartQueue.
+              Tout ce que les étudiants et le personnel de l’ISS/KIN doivent savoir sur le système.
             </p>
           </div>
 
@@ -602,14 +580,14 @@ export default function LandingPage() {
             </div>
             <div className="card-body items-center text-center py-14 px-8 relative z-10">
               <h2 className="text-3xl md:text-4xl font-bold mb-4">
-                Prêt à transformer votre accueil ?
+                Prêt à moderniser les services ISS/KIN ?
               </h2>
               <p className="text-primary-content/80 max-w-xl mb-8 leading-relaxed">
-                Rejoignez les entreprises qui ont déjà optimisé leur gestion de files d&apos;attente avec SmartQueue. Inscription gratuite, sans engagement.
+                Connectez-vous au portail SmartQueue ISS/KIN pour gérer vos services, vos agents et suivre les files d&apos;attente en temps réel.
               </p>
               <div className="flex flex-col sm:flex-row gap-3">
-                <Link href="/sign-up" className="btn btn-secondary btn-lg gap-2 shadow-lg">
-                  Créer mon compte gratuit
+                <Link href="/sign-in" className="btn btn-secondary btn-lg gap-2 shadow-lg">
+                  Se connecter au portail
                   <ArrowRight className="w-5 h-5" />
                 </Link>
               </div>
@@ -628,29 +606,32 @@ export default function LandingPage() {
                 <div className="rounded-xl p-2 bg-primary/10">
                   <AudioWaveform className="w-5 h-5 text-primary" />
                 </div>
-                <span className="font-bold text-lg">SmartQueue</span>
+                <div className="flex flex-col leading-tight">
+                  <span className="font-bold text-base leading-none">SmartQueue</span>
+                  <span className="text-xs text-primary/70 font-semibold leading-none">ISS/KIN</span>
+                </div>
               </Link>
               <p className="text-sm text-base-content/50 leading-relaxed">
-                La solution intelligente pour gérer vos files d&apos;attente et optimiser votre accueil.
+                Système de gestion de files d’attente de l’Institut Supérieur des Statistiques de Kinshasa.
               </p>
             </div>
 
             {/* Product */}
             <div>
-              <h4 className="font-semibold text-sm mb-3">Produit</h4>
+              <h4 className="font-semibold text-sm mb-3">Système</h4>
               <ul className="space-y-2 text-sm">
                 <li><a href="#features" className="text-base-content/60 hover:text-primary transition-colors">Fonctionnalités</a></li>
-                <li><a href="#pricing" className="text-base-content/60 hover:text-primary transition-colors">Tarifs</a></li>
+                <li><a href="#services" className="text-base-content/60 hover:text-primary transition-colors">Nos services</a></li>
                 <li><a href="#faq" className="text-base-content/60 hover:text-primary transition-colors">FAQ</a></li>
               </ul>
             </div>
 
-            {/* Company */}
+            {/* Portail */}
             <div>
-              <h4 className="font-semibold text-sm mb-3">Entreprise</h4>
+              <h4 className="font-semibold text-sm mb-3">Portail</h4>
               <ul className="space-y-2 text-sm">
-                <li><Link href="/sign-up" className="text-base-content/60 hover:text-primary transition-colors">Inscription</Link></li>
                 <li><Link href="/sign-in" className="text-base-content/60 hover:text-primary transition-colors">Connexion</Link></li>
+                <li><a href="#acces" className="text-base-content/60 hover:text-primary transition-colors">Niveaux d&apos;accès</a></li>
               </ul>
             </div>
 
@@ -668,7 +649,7 @@ export default function LandingPage() {
 
           <div className="flex flex-col md:flex-row justify-between items-center gap-4 pt-6">
             <p className="text-xs text-base-content/40">
-              © {new Date().getFullYear()} SmartQueue. Tous droits réservés.
+              © {new Date().getFullYear()} SmartQueue ISS/KIN — Institut Supérieur des Statistiques de Kinshasa.
             </p>
             <div className="flex gap-6 text-xs text-base-content/40">
               <a href="#" className="hover:text-base-content transition-colors">Mentions légales</a>

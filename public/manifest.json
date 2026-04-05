@@ -1,7 +1,7 @@
 {
-  "name": "SmartQueue - Gestion de files d'attente",
+  "name": "SmartQueue ISS/KIN",
   "short_name": "SmartQueue",
-  "description": "Système de gestion de files d'attente intelligent en temps réel",
+  "description": "Système de gestion de files d'attente — Institut Supérieur des Statistiques de Kinshasa",
   "start_url": "/",
   "display": "standalone",
   "background_color": "#ffffff",

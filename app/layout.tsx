@@ -19,13 +19,13 @@ const geistMono = Geist_Mono({
 });
 
 export const metadata: Metadata = {
-  title: "SmartQueue - Gestion de files d'attente intelligente",
-  description: "Système de gestion de files d'attente pour les entreprises. Créez des tickets, gérez les files d'attente en temps réel et optimisez l'expérience client.",
-  keywords: ['gestion de file', 'queue management', 'tickets', 'attente', 'gestion client', 'temps réel'],
-  authors: [{ name: 'SmartQueue Team' }],
+  title: "SmartQueue ISS/KIN — Gestion de files d'attente",
+  description: "Système de gestion de files d'attente de l'Institut Supérieur des Statistiques de Kinshasa. Scolarité, Finance, Bibliothèque et plus.",
+  keywords: ['ISS/KIN', 'Institut Supérieur des Statistiques de Kinshasa', 'gestion de file', 'queue management', 'université Kinshasa', 'tickets administratifs'],
+  authors: [{ name: 'ISS/KIN — Projet Tutoré' }],
   openGraph: {
-    title: 'SmartQueue - Gestion de files d\'attente',
-    description: 'Système intelligent de gestion de files d\'attente en temps réel',
+    title: 'SmartQueue ISS/KIN — Gestion de files d\'attente',
+    description: 'Système institutionnel de gestion de files d\'attente — Institut Supérieur des Statistiques de Kinshasa',
     type: 'website',
     locale: 'fr_FR',
   },
@@ -60,7 +60,7 @@ export default function RootLayout({
             <meta name="theme-color" content="#570df8" />
             <meta name="apple-mobile-web-app-capable" content="yes" />
             <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
-            <meta name="apple-mobile-web-app-title" content="SmartQueue" />
+            <meta name="apple-mobile-web-app-title" content="SmartQueue ISS/KIN" />
             <meta name="format-detection" content="telephone=no" />
             <meta name="mobile-web-app-capable" content="yes" />
             <script
