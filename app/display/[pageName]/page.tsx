@@ -1,23 +1,17 @@
 import { getTicketsForDisplay } from '@/app/actions'
 import DisplayBoard from '@/app/components/DisplayBoard'
-import { getCompanyTheme } from '@/app/actions/theme'
 import { notFound } from 'next/navigation'
 
-export async function generateMetadata({ params }: { params: Promise<{ pageName: string }> }) {
-  const { pageName } = await params
-  const theme = await getCompanyTheme(pageName)
+export async function generateMetadata() {
   return {
-    title: theme ? `Affichage Public — ${theme.name}` : 'Affichage Public — SmartQueue',
-    description: `File d'attente en temps réel pour ${pageName}`,
+    title: 'Affichage Public — SmartQueue ISS/KIN',
+    description: "File d'attente en temps réel — Institut Supérieur des Statistiques de Kinshasa",
   }
 }
 
 export default async function DisplayPage({ params }: { params: Promise<{ pageName: string }> }) {
   const { pageName } = await params
-  const [data, theme] = await Promise.all([
-    getTicketsForDisplay(pageName),
-    getCompanyTheme(pageName),
-  ])
+  const data = await getTicketsForDisplay(pageName)
 
   if (!data) {
     notFound()
@@ -27,9 +21,6 @@ export default async function DisplayPage({ params }: { params: Promise<{ pageNa
     <DisplayBoard
       initialData={data}
       pageName={pageName}
-      companyName={theme?.name}
-      logoUrl={theme?.logoUrl}
-      primaryColor={theme?.primaryColor}
     />
   )
 }

@@ -14,7 +14,6 @@ import {
   TrendingUp,
   Globe,
   Clock,
-  Palette,
   GlobeLock,
   ChevronLeft,
   ChevronRight,
@@ -60,7 +59,6 @@ const navGroups: NavGroup[] = [
     links: [
       { href: '/settings/virtual-queue', label: 'File virtuelle', icon: <Globe className="w-5 h-5" />, roles: ['OWNER', 'ADMIN'] },
       { href: '/settings/business-hours', label: 'Horaires', icon: <Clock className="w-5 h-5" />, roles: ['OWNER', 'ADMIN'] },
-      { href: '/settings/theme', label: 'Thème', icon: <Palette className="w-5 h-5" />, roles: ['OWNER', 'ADMIN'] },
     ],
   },
 ]
