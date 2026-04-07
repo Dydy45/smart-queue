@@ -63,6 +63,14 @@ const page = ({ params }: { params: Promise<{ pageName: string }> }) => {
     }
   }
 
+  // Auto-ouvrir la modal feedback dès qu'un ticket passe FINISHED
+  useEffect(() => {
+    if (finishedTickets.length > 0 && !feedbackTicket) {
+      setFeedbackTicket(finishedTickets[0])
+    }
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [finishedTickets])
+
   // Keep ref in sync with current ticketNums for use in polling interval
   const ticketNumsRef = useRef<any[]>([])
   useEffect(() => {
