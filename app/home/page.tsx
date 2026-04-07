@@ -240,7 +240,10 @@ export default function Home() {
           ) : paginatedTickets.map((ticket) => {
             const actualIndex = tickets.findIndex(t => t.id === ticket.id)
             const totalWaitTime = tickets
-              .slice(0, actualIndex)
+              .filter(t =>
+                t.serviceId === ticket.serviceId &&
+                new Date(t.createdAt).getTime() < new Date(ticket.createdAt).getTime()
+              )
               .reduce((acc, prevTicket) => acc + prevTicket.avgTime, 0)
             return (
               <TicketComponent
