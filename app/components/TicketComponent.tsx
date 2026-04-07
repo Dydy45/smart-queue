@@ -39,9 +39,11 @@ const getConfidenceBadge = (confidence?: 'none' | 'low' | 'medium' | 'high') => 
 // eslint-disable-next-line @typescript-eslint/no-unused-vars
 const TicketComponent: React.FC<TicketComponentProps> = ({ ticket, index, totalWaitTime = 0 }) => {
 
-    // Utiliser l'estimation ML si disponible, sinon le calcul statique, sinon avgTime du service
-    const effectiveWaitTime = ticket.estimatedWait ?? (totalWaitTime > 0 ? totalWaitTime : ticket.avgTime)
-    const isMLEstimation = ticket.estimatedWait !== undefined && ticket.estimatedWait !== null
+    // Utiliser l'estimation ML si disponible (>0), sinon le calcul statique, sinon avgTime du service
+    const effectiveWaitTime = (ticket.estimatedWait && ticket.estimatedWait > 0)
+        ? ticket.estimatedWait
+        : (totalWaitTime > 0 ? totalWaitTime : (ticket.avgTime || 0))
+    const isMLEstimation = !!(ticket.estimatedWait && ticket.estimatedWait > 0)
 
     const totalHours = Math.floor(effectiveWaitTime / 60)
     const totalMinutes = effectiveWaitTime % 60
