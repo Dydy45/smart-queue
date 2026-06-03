@@ -79,7 +79,7 @@ export function validatePhoneNumber(phone: string): {
 
 // ===== Templates de messages =====
 
-export type WhatsAppTemplate = 'ticket_approaching' | 'ticket_called' | 'virtual_depart' | 'virtual_arrived'
+export type WhatsAppTemplate = 'ticket_approaching' | 'ticket_called' | 'virtual_depart' | 'virtual_arrived' | 'maintenance_suspended'
 
 interface TemplateParams {
   ticketNumber: string
@@ -89,6 +89,7 @@ interface TemplateParams {
   companyName?: string
   trackingUrl?: string
   position?: number
+  reason?: string
 }
 
 function buildMessage(template: WhatsAppTemplate, params: TemplateParams): string {
@@ -142,6 +143,20 @@ function buildMessage(template: WhatsAppTemplate, params: TemplateParams): strin
         params.position ? `Position dans la file : ${params.position}` : '',
         ``,
         `Nous avons détecté votre arrivée. Veuillez patienter, vous serez appelé sous peu.`,
+      ]
+        .filter(Boolean)
+        .join('\n')
+
+    case 'maintenance_suspended':
+      return [
+        `⚠️ *SmartQueue - Service temporairement suspendu*`,
+        ``,
+        `Bonjour ! Votre ticket *#${params.ticketNumber}* est en attente mais le service est actuellement indisponible.`,
+        ``,
+        params.serviceName ? `📍 Service : ${params.serviceName}` : '',
+        params.reason ? `ℹ️ Raison : ${params.reason}` : '',
+        ``,
+        `Nous vous informerons dès que le service reprendra. Merci de votre patience.`,
       ]
         .filter(Boolean)
         .join('\n')

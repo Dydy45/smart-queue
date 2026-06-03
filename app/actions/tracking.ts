@@ -2,6 +2,7 @@
 
 import prisma from '@/lib/prisma'
 import { calculateDistance, estimateTravelTime, formatDistance } from '@/lib/geo-utils'
+import { isUnderMaintenance } from './maintenance'
 
 /**
  * Récupère les infos de suivi d'un ticket via son trackingToken.
@@ -15,9 +16,11 @@ export async function getTicketTracking(trackingToken: string): Promise<{
     position: number
     createdAt: string
     isVirtual: boolean
+    serviceId?: string
   }
   estimatedWaitMinutes: number
   confidence: string
+  isSuspended: boolean
   company: {
     name: string
     latitude: number | null
@@ -69,6 +72,7 @@ export async function getTicketTracking(trackingToken: string): Promise<{
     // Estimation ML du temps d'attente
     let estimatedWaitMinutes = 0
     let confidence = 'none'
+    let isSuspended = false
     try {
       const { getEstimatedWaitTime } = await import('@/lib/wait-time-estimator')
       const estimate = await getEstimatedWaitTime(
@@ -78,10 +82,14 @@ export async function getTicketTracking(trackingToken: string): Promise<{
       )
       estimatedWaitMinutes = estimate.minutes
       confidence = estimate.confidence
+      isSuspended = estimate.isSuspended
     } catch {
       // Fallback : position × avgTime
       estimatedWaitMinutes = (position > 0 ? position : 1) * ticket.service.avgTime
       confidence = 'none'
+      // Vérifier maintenance mode manuellement
+      const maintenance = await isUnderMaintenance(ticket.serviceId)
+      isSuspended = !!maintenance
     }
 
     // Distance si les deux positions sont connues
@@ -113,9 +121,11 @@ export async function getTicketTracking(trackingToken: string): Promise<{
         position: position > 0 ? position : 0,
         createdAt: ticket.createdAt.toISOString(),
         isVirtual: ticket.isVirtual,
+        serviceId: ticket.serviceId,
       },
       estimatedWaitMinutes,
       confidence,
+      isSuspended,
       company: {
         name: ticket.service.company.name,
         latitude: ticket.service.company.latitude,

@@ -4,6 +4,8 @@
 "use client"
 import { getPendingTicketsByEmail, getPostNameById } from "@/app/actions"
 import { getTodayAppointments } from "@/app/actions/appointments"
+import { getActiveMaintenanceModes } from "@/app/actions/maintenance"
+import prisma from "@/lib/prisma"
 import EmptyState from "@/app/components/EmptyState"
 import TicketComponent from "@/app/components/TicketComponent"
 import Wrapper from "@/app/components/Wrapper"
@@ -28,6 +30,7 @@ const page = ({ params }: { params: Promise<{ idPoste: string }> }) => {
     const {user} = useUser()
     const email = user?.primaryEmailAddress?.emailAddress
     const [tickets, setTickets] = useState<Ticket[]>([])
+    const [maintenanceModes, setMaintenanceModes] = useState<any[]>([])
 
     const [countdown, setCountdown] = useState<number>(5)
 
@@ -45,6 +48,16 @@ const page = ({ params }: { params: Promise<{ idPoste: string }> }) => {
             // Charger aussi les RDV du jour
             const { upcoming } = await getTodayAppointments()
             setTodayAppointments(upcoming)
+
+            // Fetch maintenance modes
+            const company = await prisma.company.findUnique({
+              where: { email },
+              select: { id: true }
+            })
+            if (company) {
+              const modes = await getActiveMaintenanceModes(company.id)
+              setMaintenanceModes(modes || [])
+            }
           } catch (error) {
             console.error(error)
           }
@@ -176,12 +189,14 @@ const page = ({ params }: { params: Promise<{ idPoste: string }> }) => {
               const totalWaitTime = tickets
               .slice(0, index)
               .reduce((acc , prevTicket) => acc + prevTicket.avgTime, 0)
+              const isServiceInMaintenance = maintenanceModes.some(m => m.serviceId === ticket.serviceId)
               return (
                 <TicketComponent 
                 key={ticket.id}
                 ticket={ticket}
                 totalWaitTime={totalWaitTime}
                 index={index}
+                isServiceInMaintenance={isServiceInMaintenance}
               />
               )
             })

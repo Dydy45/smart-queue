@@ -7,16 +7,19 @@ import Wrapper from '../components/Wrapper'
 import { useUser } from '@clerk/nextjs'
 import { Post, Service } from '@/app/generated/prisma'
 import { createPost, deletePost, getPostsByCompanyEmail, getServiceByEmail } from '../actions'
-import { Trash } from 'lucide-react'
+import { activateMaintenanceMode, deactivateMaintenanceMode, getActiveMaintenanceModes } from '../actions/maintenance'
+import { Trash, Pause, Play } from 'lucide-react'
 import EmptyState from "../components/EmptyState";
 import Link from 'next/link'
 import { usePageTour } from '@/lib/usePageTour'
 import SkeletonCards from '../components/SkeletonCards'
+import { useToast } from '@/lib/useToast'
 
 const page = () => {
 
   const {user} = useUser()
   const email = user?.primaryEmailAddress?.emailAddress as string
+  const { showError, showSuccess } = useToast()
 
   const [newPostName, setNewPostName] = useState('');
   const [selectedServiceId, setSelectedServiceId] = useState('');
@@ -25,6 +28,8 @@ const page = () => {
 
   const [posts, setPosts] = useState<Post[]>([])
   const [services, setServices] = useState<Service[]>([])
+  const [maintenanceModes, setMaintenanceModes] = useState<any[]>([])
+  const [togglingMaintenance, setTogglingMaintenance] = useState<string | null>(null)
 
   usePageTour('postes', [
     {
@@ -69,6 +74,42 @@ const page = () => {
     setIsInitialLoad(false)
   }
 
+  const fetchMaintenanceModes = async () => {
+    if (!email) return
+    try {
+      const modes = await getActiveMaintenanceModes(email)
+      setMaintenanceModes(modes || [])
+    } catch (error) {
+      console.error("Error fetching maintenance modes:", error)
+    }
+  }
+
+  const isPostInMaintenance = (postId: string) => {
+    return maintenanceModes.some(m => m.postId === postId)
+  }
+
+  const handleToggleMaintenance = async (postId: string) => {
+    if (!email) return
+    setTogglingMaintenance(postId)
+    try {
+      const existing = maintenanceModes.find(m => m.postId === postId)
+      if (existing) {
+        await deactivateMaintenanceMode(existing.id)
+        showSuccess('Maintenance désactivée')
+      } else {
+        const reason = prompt('Raison de la maintenance (optionnel) :')
+        await activateMaintenanceMode(postId, 'post', reason || undefined)
+        showSuccess('Maintenance activée - Les clients en attente seront notifiés')
+      }
+      await fetchMaintenanceModes()
+    } catch (error) {
+      console.error("Error toggling maintenance:", error)
+      showError(error instanceof Error ? error.message : 'Erreur lors de la modification de la maintenance')
+    } finally {
+      setTogglingMaintenance(null)
+    }
+  }
+
   const handleCreatePost = async() => {
     if(!newPostName || !selectedServiceId) return
     setLoading(true)
@@ -86,7 +127,10 @@ const page = () => {
   }
 
   useEffect (() => {
-    if (email) fetchInitialData()
+    if (email) {
+      fetchInitialData()
+      fetchMaintenanceModes()
+    }
   } , [email])
 
   const handleDeletePost = async (postId: string) => {
@@ -136,8 +180,27 @@ const page = () => {
           ) : posts.length > 0 ? (
             posts.map((post) => (
               <li key={post.id} className='flex flex-col bg-base-200 p-5 rounded-lg'>
-                <div className='lowercase'>
-                  {post.name}
+                <div className='flex items-center justify-between'>
+                  <div className='lowercase'>
+                    {post.name}
+                    {isPostInMaintenance(post.id) && (
+                      <span className="badge badge-warning badge-xs ml-2">Maintenance</span>
+                    )}
+                  </div>
+                  <button
+                    className={`btn btn-xs ${isPostInMaintenance(post.id) ? 'btn-success' : 'btn-warning'}`}
+                    onClick={() => handleToggleMaintenance(post.id)}
+                    disabled={togglingMaintenance === post.id}
+                    aria-label={isPostInMaintenance(post.id) ? `Réactiver ${post.name}` : `Mettre en pause ${post.name}`}
+                  >
+                    {togglingMaintenance === post.id ? (
+                      <span className="loading loading-spinner loading-xs"></span>
+                    ) : isPostInMaintenance(post.id) ? (
+                      <Play className="w-3 h-3" />
+                    ) : (
+                      <Pause className="w-3 h-3" />
+                    )}
+                  </button>
                 </div>
                 <div className='flex items-center mt-2'>
                   <Link href={`/poste/${post.id}`} className='btn btn-sm btn-primary'>

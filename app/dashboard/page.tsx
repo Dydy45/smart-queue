@@ -4,6 +4,8 @@ import React, { useEffect, useState } from 'react'
 import Wrapper from '../components/Wrapper'
 import { useUser } from '@clerk/nextjs'
 import { get10LstFinishedTicketsByEmail, getTicketStatsByEmail } from '../actions'
+import { getActiveMaintenanceModes } from '../actions/maintenance'
+import prisma from '@/lib/prisma'
 import EmptyState from '../components/EmptyState'
 import TicketComponent from '../components/TicketComponent'
 import { Ticket } from '../type'
@@ -24,6 +26,7 @@ const page = () => {
     const { user } = useUser()
     const email = user?.primaryEmailAddress?.emailAddress
     const [tickets, setTickets] = useState<Ticket[]>([])
+    const [maintenanceModes, setMaintenanceModes] = useState<any[]>([])
 
     const [stats, setStats] = useState<{
         totalTickets: number;
@@ -46,6 +49,19 @@ const page = () => {
                 setStats(statsData)
             }
 
+            // Fetch maintenance modes
+            try {
+                const company = await prisma.company.findUnique({
+                    where: { email },
+                    select: { id: true }
+                })
+                if (company) {
+                    const modes = await getActiveMaintenanceModes(company.id)
+                    setMaintenanceModes(modes || [])
+                }
+            } catch (error) {
+                console.error('[Dashboard] Error fetching maintenance modes:', error)
+            }
         }
     }
 
@@ -80,6 +96,7 @@ const page = () => {
                         const totalWaitTime = tickets
                             .slice(0, index)
                             .reduce((acc, prevTicket) => acc + prevTicket.avgTime, 0)
+                        const isServiceInMaintenance = maintenanceModes.some(m => m.serviceId === ticket.serviceId)
 
                         return (
                             <TicketComponent
@@ -87,6 +104,7 @@ const page = () => {
                                 ticket={ticket}
                                 totalWaitTime={totalWaitTime}
                                 index={index}
+                                isServiceInMaintenance={isServiceInMaintenance}
                             />
                         )
                     })}

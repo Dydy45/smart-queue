@@ -30,6 +30,7 @@ model Company {
   appointments   Appointment[]
   businessHours  BusinessHours[]
   closedDates    ClosedDate[]
+  maintenanceModes MaintenanceMode[]
 }
 
 model Service {
@@ -41,6 +42,7 @@ model Service {
   posts        Post[]
   tickets      Ticket[]
   appointments Appointment[]
+  maintenanceModes MaintenanceMode[]
 }
 
 model Post {
@@ -54,6 +56,7 @@ model Post {
   tickets       Ticket[]
   assignedStaff Staff[]
   appointments  Appointment[]
+  maintenanceModes MaintenanceMode[]
 }
 
 model Ticket {
@@ -217,4 +220,25 @@ model Staff {
   assignedPosts Post[]
 
   @@unique([email, companyId])
+}
+
+model MaintenanceMode {
+  id          String   @id @default(uuid())
+  companyId   String
+  company     Company  @relation(fields: [companyId], references: [id], onDelete: Cascade)
+
+  // Portée : soit un service, soit un poste, soit null = toute l'organisation
+  serviceId   String?  @unique
+  service     Service? @relation(fields: [serviceId], references: [id], onDelete: Cascade)
+  postId      String?  @unique
+  post        Post?    @relation(fields: [postId], references: [id], onDelete: Cascade)
+
+  isActive    Boolean  @default(true)
+  reason      String?
+  activatedAt DateTime @default(now())
+  activatedBy String   // Email de l'admin qui a activé le mode
+
+  @@index([companyId])
+  @@index([serviceId])
+  @@index([postId])
 }

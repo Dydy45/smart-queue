@@ -4,22 +4,27 @@ import React, { useEffect, useState } from 'react'
 import Wrapper from '../components/Wrapper'
 import { useUser } from '@clerk/nextjs'
 import { createService, deleteServiceById, getServiceByEmail } from '../actions'
+import { activateMaintenanceMode, deactivateMaintenanceMode, getActiveMaintenanceModes, isUnderMaintenance } from '../actions/maintenance'
 import { Service } from '../generated/prisma'
-import { Clock2, ClockArrowUp, Trash } from 'lucide-react'
+import { Clock2, ClockArrowUp, Trash, Pause, Play } from 'lucide-react'
 import EmptyState from '../components/EmptyState'
 import { usePageTour } from '@/lib/usePageTour'
 import SkeletonTable from '../components/SkeletonTable'
+import { useToast } from '@/lib/useToast'
 
 const page = () => {
 
     const {user} = useUser()
     const email = user?.primaryEmailAddress?.emailAddress
+    const { showError, showSuccess } = useToast()
 
     const [serviceName, setServiceName] = useState("")
     const [avgTime, setAvgTime] = useState(0)
     const [loading, setLoading] = useState<boolean>(false)
     const [isInitialLoad, setIsInitialLoad] = useState<boolean>(true)
     const [services, setServices] = useState<Service[]>([])
+    const [maintenanceModes, setMaintenanceModes] = useState<any[]>([])
+    const [togglingMaintenance, setTogglingMaintenance] = useState<string | null>(null)
 
     usePageTour('services', [
       {
@@ -68,8 +73,47 @@ const page = () => {
       }
     }
 
+    const fetchMaintenanceModes = async () => {
+      if (!email) return
+      try {
+        const modes = await getActiveMaintenanceModes(email)
+        setMaintenanceModes(modes || [])
+      } catch (error) {
+        console.error("Error fetching maintenance modes:", error)
+      }
+    }
+
+    const isServiceInMaintenance = (serviceId: string) => {
+      return maintenanceModes.some(m => m.serviceId === serviceId)
+    }
+
+    const handleToggleMaintenance = async (serviceId: string) => {
+      if (!email) return
+      setTogglingMaintenance(serviceId)
+      try {
+        const existing = maintenanceModes.find(m => m.serviceId === serviceId)
+        if (existing) {
+          await deactivateMaintenanceMode(existing.id)
+          showSuccess('Maintenance désactivée')
+        } else {
+          const reason = prompt('Raison de la maintenance (optionnel) :')
+          await activateMaintenanceMode(serviceId, 'service', reason || undefined)
+          showSuccess('Maintenance activée - Les clients en attente seront notifiés')
+        }
+        await fetchMaintenanceModes()
+      } catch (error) {
+        console.error("Error toggling maintenance:", error)
+        showError(error instanceof Error ? error.message : 'Erreur lors de la modification de la maintenance')
+      } finally {
+        setTogglingMaintenance(null)
+      }
+    }
+
     useEffect(() => {
-      if (email) fetchServices(true)
+      if (email) {
+        fetchServices(true)
+        fetchMaintenanceModes()
+      }
     // eslint-disable-next-line react-hooks/exhaustive-deps
     }, [email])
 
@@ -147,16 +191,37 @@ const page = () => {
                     {services.map((service, index) => (
                       <tr key={service.id}>
                       <th>{index + 1}</th>
-                      <td>{service.name}</td>
+                      <td>
+                        {service.name}
+                        {isServiceInMaintenance(service.id) && (
+                          <span className="badge badge-warning badge-xs ml-2">Maintenance</span>
+                        )}
+                      </td>
                       <td className='flex items-center'> <Clock2 className="w-4 h-4 inline mr-2" />{service.avgTime} min</td>
                       <td>
-                        <button
-                          className='btn btn-xs btn-error'
-                          onClick={() => handleDeleteService(service.id)}
-                          aria-label={`Supprimer le service ${service.name}`}
-                        >
-                          <Trash className="w-4 h-4" />
-                        </button>
+                        <div className="flex gap-2">
+                          <button
+                            className={`btn btn-xs ${isServiceInMaintenance(service.id) ? 'btn-success' : 'btn-warning'}`}
+                            onClick={() => handleToggleMaintenance(service.id)}
+                            disabled={togglingMaintenance === service.id}
+                            aria-label={isServiceInMaintenance(service.id) ? `Réactiver ${service.name}` : `Mettre en pause ${service.name}`}
+                          >
+                            {togglingMaintenance === service.id ? (
+                              <span className="loading loading-spinner loading-xs"></span>
+                            ) : isServiceInMaintenance(service.id) ? (
+                              <Play className="w-3 h-3" />
+                            ) : (
+                              <Pause className="w-3 h-3" />
+                            )}
+                          </button>
+                          <button
+                            className='btn btn-xs btn-error'
+                            onClick={() => handleDeleteService(service.id)}
+                            aria-label={`Supprimer le service ${service.name}`}
+                          >
+                            <Trash className="w-4 h-4" />
+                          </button>
+                        </div>
                       </td>
                     </tr>
                     ))}

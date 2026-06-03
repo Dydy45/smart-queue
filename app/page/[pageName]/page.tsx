@@ -2,11 +2,13 @@
 /* eslint-disable react-hooks/rules-of-hooks */
 "use client"
 import { createTicket, getServicesByPageName, getTicketsByIds, getTicketsWithContext } from '@/app/actions'
+import { isUnderMaintenance } from '@/app/actions/maintenance'
 import TicketComponent from '@/app/components/TicketComponent'
 import FeedbackModal from '@/app/components/FeedbackModal'
 import { Service } from '@/app/generated/prisma'
 import { Ticket } from '@/app/type'
 import { useToast } from '@/lib/useToast'
+import { AlertTriangle } from 'lucide-react'
 
 // eslint-disable-next-line @typescript-eslint/no-unused-vars
 import React, { use, useEffect, useMemo, useRef, useState } from 'react'
@@ -18,6 +20,7 @@ const page = ({ params }: { params: Promise<{ pageName: string }> }) => {
   const [allTickets, setAllTickets] = useState<Ticket[]>([])
   const [pageName, setPageName] = useState<string | null>(null)
   const [services, setServices] = useState<Service[]>([])
+  const [servicesInMaintenance, setServicesInMaintenance] = useState<Set<string>>(new Set())
   const [selectedServiceId, setSelectedServiceId] = useState<string | null>(null)
   const [nameComplete, setNameComplete] = useState<string>("")
   const [phoneNumber, setPhoneNumber] = useState<string>("")
@@ -52,6 +55,16 @@ const page = ({ params }: { params: Promise<{ pageName: string }> }) => {
       if (servicesList) {
         setServices(servicesList)
         showSuccess(`${servicesList.length} service(s) chargé(s) avec succès`)
+
+        // Check which services are in maintenance
+        const maintenanceSet = new Set<string>()
+        for (const service of servicesList) {
+          const maintenance = await isUnderMaintenance(service.id)
+          if (maintenance) {
+            maintenanceSet.add(service.id)
+          }
+        }
+        setServicesInMaintenance(maintenanceSet)
       } else {
         showError('Aucun service trouvé pour cette page')
       }
@@ -207,6 +220,19 @@ const page = ({ params }: { params: Promise<{ pageName: string }> }) => {
         <p className='text-md'>Aller , créer votre ticket</p>
       </div>
 
+      {/* Banner alert for services in maintenance */}
+      {servicesInMaintenance.size > 0 && (
+        <div className="alert alert-warning mb-4">
+          <AlertTriangle className="w-5 h-5" />
+          <div>
+            <h3 className="font-bold">Service temporairement indisponible</h3>
+            <p className="text-sm">
+              {services.filter(s => servicesInMaintenance.has(s.id)).map(s => s.name).join(', ')} - Traitement suspendu
+            </p>
+          </div>
+        </div>
+      )}
+
       <div className='flex flex-col md:flex-row w-full mt-4'>
 
         <form className='flex flex-col space-y-2 md:w-96' onSubmit={handleSubmit}>
@@ -221,8 +247,13 @@ const page = ({ params }: { params: Promise<{ pageName: string }> }) => {
               {isLoadingServices ? '⏳ Chargement des services...' : 'Choisissez un service'}
             </option>
             {services.map((service) => (
-              <option key={service.id} value={service.id}>
+              <option 
+                key={service.id} 
+                value={service.id}
+                disabled={servicesInMaintenance.has(service.id)}
+              >
                 {service.name} - ({service.avgTime} min)
+                {servicesInMaintenance.has(service.id) && ' (Indisponible)'}
               </option>
             ))}
           </select>
@@ -366,6 +397,7 @@ const page = ({ params }: { params: Promise<{ pageName: string }> }) => {
                       ticket={ticket}
                       totalWaitTime={totalWaitTime}
                       index={actualIndex}
+                      isServiceInMaintenance={servicesInMaintenance.has(ticket.serviceId)}
                     />
                   )
                 })}

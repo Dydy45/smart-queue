@@ -2,6 +2,7 @@
 import { useUser } from "@clerk/nextjs";
 import Wrapper from "../components/Wrapper";
 import { getPendingTicketsByEmail, initUserSession, getMyAssignedPosts } from "../actions";
+import { getActiveMaintenanceModes } from "../actions/maintenance";
 import { useEffect, useMemo, useState } from "react";
 import { Ticket } from "../type";
 import TicketComponent from "../components/TicketComponent";
@@ -10,6 +11,7 @@ import { Briefcase, Monitor, Copy, ExternalLink } from "lucide-react";
 import OnboardingTour from "../components/OnboardingTour";
 import SkeletonTicket from "../components/SkeletonTicket";
 import EmptyState from "../components/EmptyState";
+import prisma from "@/lib/prisma";
 
 type AssignedPost = {
   id: string
@@ -32,6 +34,7 @@ export default function Home() {
   const [pageName, setPageName] = useState<string | null>(null)
   const [displayUrlCopied, setDisplayUrlCopied] = useState(false)
   const [showOnboarding, setShowOnboarding] = useState(false)
+  const [maintenanceModes, setMaintenanceModes] = useState<any[]>([])
   const TICKETS_PER_PAGE = 10
 
   const totalPages = Math.ceil(tickets.length / TICKETS_PER_PAGE)
@@ -77,6 +80,22 @@ export default function Home() {
         if (role === 'STAFF') {
           const posts = await getMyAssignedPosts()
           setAssignedPosts(posts)
+        }
+
+        // Fetch maintenance modes
+        if (pn) {
+          try {
+            const company = await prisma.company.findUnique({
+              where: { pageName: pn },
+              select: { id: true }
+            })
+            if (company) {
+              const modes = await getActiveMaintenanceModes(company.id)
+              setMaintenanceModes(modes || [])
+            }
+          } catch (error) {
+            console.error('[HomePage] Error fetching maintenance modes:', error)
+          }
         }
       } catch (error) {
         console.error('[HomePage] Error fetching user data:', error)
@@ -245,12 +264,14 @@ export default function Home() {
                 new Date(t.createdAt).getTime() < new Date(ticket.createdAt).getTime()
               )
               .reduce((acc, prevTicket) => acc + prevTicket.avgTime, 0)
+            const isServiceInMaintenance = maintenanceModes.some(m => m.serviceId === ticket.serviceId)
             return (
               <TicketComponent
                 key={ticket.id}
                 ticket={ticket}
                 totalWaitTime={totalWaitTime}
                 index={actualIndex}
+                isServiceInMaintenance={isServiceInMaintenance}
               />
             )
           })}

@@ -1,4 +1,4 @@
-import { Loader } from 'lucide-react';
+import { Loader, AlertTriangle } from 'lucide-react';
 import React, { useEffect, useState } from 'react'
 import { Ticket } from '../type';
 
@@ -6,6 +6,7 @@ interface TicketComponentProps {
     ticket: Ticket;
     index?: number;
     totalWaitTime?: number;
+    isServiceInMaintenance?: boolean;
 }
 
 const getStatusBadge = (status: string) => {
@@ -37,7 +38,7 @@ const getConfidenceBadge = (confidence?: 'none' | 'low' | 'medium' | 'high') => 
 }
 
 // eslint-disable-next-line @typescript-eslint/no-unused-vars
-const TicketComponent: React.FC<TicketComponentProps> = ({ ticket, index, totalWaitTime = 0 }) => {
+const TicketComponent: React.FC<TicketComponentProps> = ({ ticket, index, totalWaitTime = 0, isServiceInMaintenance = false }) => {
 
     // Utiliser l'estimation ML si disponible (>0), sinon le calcul statique, sinon avgTime du service
     const effectiveWaitTime = (ticket.estimatedWait && ticket.estimatedWait > 0)
@@ -91,6 +92,12 @@ const TicketComponent: React.FC<TicketComponentProps> = ({ ticket, index, totalW
                 )}
                 {ticket.clientDistance && (
                     <span className='badge badge-ghost badge-outline ml-1 gap-1'>📍 {ticket.clientDistance}</span>
+                )}
+                {isServiceInMaintenance && (
+                    <span className='badge badge-warning badge-xs ml-2 gap-1'>
+                        <AlertTriangle className="w-3 h-3" />
+                        Traitement suspendu
+                    </span>
                 )}
                 <span className='font-bold text-xl'>
                     <span className='ml-2'>

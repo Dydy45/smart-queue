@@ -13,9 +13,11 @@ type TrackingData = {
     position: number
     createdAt: string
     isVirtual: boolean
+    serviceId?: string
   }
   estimatedWaitMinutes: number
   confidence: string
+  isSuspended?: boolean
   company: {
     name: string
     latitude: number | null
@@ -58,7 +60,7 @@ function getConfidenceBadge(confidence: string) {
 }
 
 function getDepartureAdvice(data: TrackingData): { text: string; urgent: boolean } | null {
-  if (!data.distance || data.ticket.status !== 'PENDING') return null
+  if (!data.distance || data.ticket.status !== 'PENDING' || data.isSuspended) return null
 
   const timeToLeave = data.estimatedWaitMinutes - data.distance.travelMinutes
 
@@ -269,20 +271,33 @@ export default function TrackingPage({ params }: { params: Promise<{ trackingTok
 
         {/* Temps d'attente estimé */}
         {data.ticket.status === 'PENDING' && (
-          <div className="card bg-base-100 shadow-lg">
-            <div className="card-body">
-              <div className="flex items-center gap-2 mb-2">
-                <Clock className="w-5 h-5 text-primary" />
-                <h2 className="font-semibold">Temps d&apos;attente estimé</h2>
-                {getConfidenceBadge(data.confidence)}
+          <>
+            {data.isSuspended && (
+              <div className="alert alert-warning mb-4">
+                <AlertTriangle className="w-5 h-5" />
+                <div>
+                  <h3 className="font-bold">Service suspendu</h3>
+                  <p className="text-sm">Le service est temporairement indisponible. Votre ticket reste en attente.</p>
+                </div>
               </div>
+            )}
+            <div className="card bg-base-100 shadow-lg">
+              <div className="card-body">
+                <div className="flex items-center gap-2 mb-2">
+                  <Clock className="w-5 h-5 text-primary" />
+                  <h2 className="font-semibold">Temps d&apos;attente estimé</h2>
+                  {getConfidenceBadge(data.confidence)}
+                </div>
 
-              <div className="text-center">
-                <span className="text-4xl font-bold">~{data.estimatedWaitMinutes}</span>
-                <span className="text-lg text-gray-500 ml-1">min</span>
+                <div className="text-center">
+                  <span className="text-4xl font-bold">
+                    {data.isSuspended ? '--' : `~${data.estimatedWaitMinutes}`}
+                  </span>
+                  <span className="text-lg text-gray-500 ml-1">min</span>
+                </div>
               </div>
             </div>
-          </div>
+          </>
         )}
 
         {/* Distance & trajet */}

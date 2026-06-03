@@ -1,3 +1,4 @@
+import { isUnderMaintenance } from '@/app/actions/maintenance'
 import prisma from '@/lib/prisma'
 
 /**
@@ -18,6 +19,7 @@ export interface ServiceDurationEstimate {
 export interface WaitTimeEstimate {
   minutes: number
   confidence: ConfidenceLevel
+  isSuspended: boolean
   breakdown: {
     serviceDuration: number  // durée estimée du service (min)
     activePostsCount: number // nombre de postes actifs
@@ -165,10 +167,22 @@ export async function getEstimatedWaitTime(
   companyId: string,
   queuePosition: number
 ): Promise<WaitTimeEstimate> {
+  // Vérifier si le service est en maintenance
+  const maintenance = await isUnderMaintenance(serviceId)
+  if (maintenance) {
+    return {
+      minutes: -1,
+      confidence: 'none',
+      isSuspended: true,
+      breakdown: { serviceDuration: 0, activePostsCount: 0, queuePosition }
+    }
+  }
+
   if (queuePosition <= 0) {
     return {
       minutes: 0,
       confidence: 'high',
+      isSuspended: false,
       breakdown: { serviceDuration: 0, activePostsCount: 1, queuePosition: 0 }
     }
   }
@@ -194,6 +208,7 @@ export async function getEstimatedWaitTime(
   return {
     minutes: Math.round(waitMinutes),
     confidence: durationEstimate.confidence,
+    isSuspended: false,
     breakdown: {
       serviceDuration: durationEstimate.estimate,
       activePostsCount: effectivePosts,
