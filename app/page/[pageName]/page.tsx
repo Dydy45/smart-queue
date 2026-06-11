@@ -1,14 +1,14 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 /* eslint-disable react-hooks/rules-of-hooks */
 "use client"
-import { createTicket, getServicesByPageName, getTicketsByIds, getTicketsWithContext } from '@/app/actions'
+import { createTicket, getServicesByPageName, getTicketsByIds, getTicketsWithContext, getWaitingCountsByPageName } from '@/app/actions'
 import { isUnderMaintenance } from '@/app/actions/maintenance'
 import TicketComponent from '@/app/components/TicketComponent'
 import FeedbackModal from '@/app/components/FeedbackModal'
 import { Service } from '@/app/generated/prisma'
 import { Ticket } from '@/app/type'
 import { useToast } from '@/lib/useToast'
-import { AlertTriangle } from 'lucide-react'
+import { AlertTriangle, Users } from 'lucide-react'
 
 // eslint-disable-next-line @typescript-eslint/no-unused-vars
 import React, { use, useEffect, useMemo, useRef, useState } from 'react'
@@ -21,6 +21,7 @@ const page = ({ params }: { params: Promise<{ pageName: string }> }) => {
   const [pageName, setPageName] = useState<string | null>(null)
   const [services, setServices] = useState<Service[]>([])
   const [servicesInMaintenance, setServicesInMaintenance] = useState<Set<string>>(new Set())
+  const [waitingCounts, setWaitingCounts] = useState<Record<string, number>>({})
   const [selectedServiceId, setSelectedServiceId] = useState<string | null>(null)
   const [nameComplete, setNameComplete] = useState<string>("")
   const [phoneNumber, setPhoneNumber] = useState<string>("")
@@ -47,10 +48,12 @@ const page = ({ params }: { params: Promise<{ pageName: string }> }) => {
     try {
       const resolvedParams = await params
       setPageName(resolvedParams.pageName)
-      const [servicesList, vqConfig] = await Promise.all([
+      const [servicesList, vqConfig, counts] = await Promise.all([
         getServicesByPageName(resolvedParams.pageName),
         import('@/app/actions/virtual-queue').then(m => m.getVirtualQueuePublicConfig(resolvedParams.pageName)),
+        getWaitingCountsByPageName(resolvedParams.pageName),
       ])
+      setWaitingCounts(counts)
       if (vqConfig) setVirtualQueueEnabled(vqConfig.enabled)
       if (servicesList) {
         setServices(servicesList)
@@ -90,13 +93,14 @@ const page = ({ params }: { params: Promise<{ pageName: string }> }) => {
     ticketNumsRef.current = ticketNums
   }, [ticketNums])
 
-  // Poll every 5 seconds for real-time ticket status updates
+  // Poll every 5 seconds for real-time ticket status and waiting count updates
   useEffect(() => {
     if (!pageName) return
     const interval = setInterval(() => {
       if (ticketNumsRef.current.length > 0) {
         fetchTicketsByIds(ticketNumsRef.current)
       }
+      getWaitingCountsByPageName(pageName).then(setWaitingCounts).catch(console.error)
     }, 5000)
     return () => clearInterval(interval)
   // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -199,6 +203,7 @@ const page = ({ params }: { params: Promise<{ pageName: string }> }) => {
         showSuccess(`Ticket ${ticketNum} créé avec succès!`)
         // Fetch the newly created ticket to display it immediately
         await fetchTicketsByIds(updatedTicketNums)
+        getWaitingCountsByPageName(pageName || '').then(setWaitingCounts).catch(console.error)
       }
 
     } catch (error) {
@@ -252,11 +257,34 @@ const page = ({ params }: { params: Promise<{ pageName: string }> }) => {
                 value={service.id}
                 disabled={servicesInMaintenance.has(service.id)}
               >
-                {service.name} - ({service.avgTime} min)
+                {service.name} - ({service.avgTime} min) · {waitingCounts[service.id] || 0} en attente
                 {servicesInMaintenance.has(service.id) && ' (Indisponible)'}
               </option>
             ))}
           </select>
+
+          {/* Affluence en temps réel par service */}
+          {!isLoadingServices && services.length > 0 && (
+            <div className="flex flex-wrap gap-2">
+              {services.map((service) => (
+                <span
+                  key={service.id}
+                  className={`badge badge-sm gap-1 ${
+                    servicesInMaintenance.has(service.id)
+                      ? 'badge-ghost opacity-50'
+                      : (waitingCounts[service.id] || 0) > 0
+                        ? 'badge-outline'
+                        : 'badge-ghost'
+                  }`}
+                  title={`${waitingCounts[service.id] || 0} étudiant(s) en attente pour ${service.name}`}
+                >
+                  <Users className="w-3 h-3" aria-hidden="true" />
+                  <span className="font-semibold">{waitingCounts[service.id] || 0}</span>
+                  <span className="max-w-24 truncate">{service.name}</span>
+                </span>
+              ))}
+            </div>
+          )}
           <input
             type="text"
             placeholder='Quel est votre nom ?'
