@@ -6,7 +6,7 @@
     "dev": "next dev",
     "socket-server": "tsx server.js",
     "postinstall": "prisma generate",
-    "build": "prisma generate && next build",
+    "build": "prisma generate && prisma migrate deploy && next build",
     "start": "next start",
     "lint": "eslint",
     "video:preview": "remotion studio remotion-video/index.ts",
