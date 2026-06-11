@@ -331,6 +331,36 @@ export async function getServicesByPageName(pageName: string) {
     }
 }
 
+/**
+ * Retourne le nombre de clients en attente (PENDING)
+ * par service pour une page publique donnée.
+ */
+export async function getWaitingCountsByPageName(pageName: string): Promise<Record<string, number>> {
+    try {
+        const validatedPageName = pageNameSchema.parse(pageName)
+
+        const company = await prisma.company.findUnique({
+            where: { pageName: validatedPageName },
+            select: { id: true }
+        })
+        if (!company) return {}
+
+        const counts = await prisma.ticket.groupBy({
+            by: ['serviceId'],
+            where: {
+                service: { companyId: company.id },
+                status: 'PENDING'
+            },
+            _count: { _all: true }
+        })
+
+        return Object.fromEntries(counts.map(c => [c.serviceId, c._count._all]))
+    } catch (error) {
+        console.error(error)
+        return {}
+    }
+}
+
 export async function createTicket(
     serviceId: string,
     nameComplete: string,
