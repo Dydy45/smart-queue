@@ -332,7 +332,7 @@ export async function getServicesByPageName(pageName: string) {
 }
 
 /**
- * Retourne le nombre de clients en attente (PENDING, CALL, IN_PROGRESS)
+ * Retourne le nombre de clients en attente (PENDING)
  * par service pour une page publique donnée.
  */
 export async function getWaitingCountsByPageName(pageName: string): Promise<Record<string, number>> {
@@ -349,7 +349,7 @@ export async function getWaitingCountsByPageName(pageName: string): Promise<Reco
             by: ['serviceId'],
             where: {
                 service: { companyId: company.id },
-                status: { in: ['PENDING', 'CALL', 'IN_PROGRESS'] }
+                status: 'PENDING'
             },
             _count: { _all: true }
         })

@@ -97,6 +97,7 @@ const page = ({ params }: { params: Promise<{ pageName: string }> }) => {
   useEffect(() => {
     if (!pageName) return
     const interval = setInterval(() => {
+      if (document.visibilityState !== 'visible') return
       if (ticketNumsRef.current.length > 0) {
         fetchTicketsByIds(ticketNumsRef.current)
       }
