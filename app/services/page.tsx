@@ -93,11 +93,19 @@ const page = () => {
       try {
         const existing = maintenanceModes.find(m => m.serviceId === serviceId)
         if (existing) {
-          await deactivateMaintenanceMode(existing.id)
+          const result = await deactivateMaintenanceMode(existing.id)
+          if (!result.success) {
+            showError(result.error || 'Erreur lors de la désactivation de la maintenance')
+            return
+          }
           showSuccess('Maintenance désactivée')
         } else {
           const reason = prompt('Raison de la maintenance (optionnel) :')
-          await activateMaintenanceMode(serviceId, 'service', reason || undefined)
+          const result = await activateMaintenanceMode(serviceId, 'service', reason || undefined)
+          if (!result.success) {
+            showError(result.error || 'Erreur lors de l\'activation de la maintenance')
+            return
+          }
           showSuccess('Maintenance activée - Les clients en attente seront notifiés')
         }
         await fetchMaintenanceModes()
