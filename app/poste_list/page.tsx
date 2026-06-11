@@ -1,11 +1,10 @@
-/* eslint-disable @typescript-eslint/no-unused-vars */
 /* eslint-disable react-hooks/exhaustive-deps */
 /* eslint-disable react-hooks/rules-of-hooks */
 "use client"
 import React, { useEffect, useState } from 'react'
 import Wrapper from '../components/Wrapper'
 import { useUser } from '@clerk/nextjs'
-import { Post, Service } from '@/app/generated/prisma'
+import { MaintenanceMode, Post, Service } from '@/app/generated/prisma'
 import { createPost, deletePost, getPostsByCompanyEmail, getServiceByEmail } from '../actions'
 import { activateMaintenanceMode, deactivateMaintenanceMode, getActiveMaintenanceModes } from '../actions/maintenance'
 import { Trash, Pause, Play } from 'lucide-react'
@@ -28,7 +27,7 @@ const page = () => {
 
   const [posts, setPosts] = useState<Post[]>([])
   const [services, setServices] = useState<Service[]>([])
-  const [maintenanceModes, setMaintenanceModes] = useState<any[]>([])
+  const [maintenanceModes, setMaintenanceModes] = useState<MaintenanceMode[]>([])
   const [togglingMaintenance, setTogglingMaintenance] = useState<string | null>(null)
 
   usePageTour('postes', [

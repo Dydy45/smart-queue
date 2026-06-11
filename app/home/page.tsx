@@ -12,6 +12,7 @@ import OnboardingTour from "../components/OnboardingTour";
 import SkeletonTicket from "../components/SkeletonTicket";
 import EmptyState from "../components/EmptyState";
 import prisma from "@/lib/prisma";
+import { MaintenanceMode } from "@/app/generated/prisma";
 
 type AssignedPost = {
   id: string
@@ -34,7 +35,7 @@ export default function Home() {
   const [pageName, setPageName] = useState<string | null>(null)
   const [displayUrlCopied, setDisplayUrlCopied] = useState(false)
   const [showOnboarding, setShowOnboarding] = useState(false)
-  const [maintenanceModes, setMaintenanceModes] = useState<any[]>([])
+  const [maintenanceModes, setMaintenanceModes] = useState<MaintenanceMode[]>([])
   const TICKETS_PER_PAGE = 10
 
   const totalPages = Math.ceil(tickets.length / TICKETS_PER_PAGE)

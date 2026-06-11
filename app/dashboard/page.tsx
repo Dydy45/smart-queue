@@ -9,6 +9,7 @@ import prisma from '@/lib/prisma'
 import EmptyState from '../components/EmptyState'
 import TicketComponent from '../components/TicketComponent'
 import { Ticket } from '../type'
+import { MaintenanceMode } from '@/app/generated/prisma'
 
 const StatCard = ({ title, value }: { title: string; value: number }) => {
     return (
@@ -26,7 +27,7 @@ const page = () => {
     const { user } = useUser()
     const email = user?.primaryEmailAddress?.emailAddress
     const [tickets, setTickets] = useState<Ticket[]>([])
-    const [maintenanceModes, setMaintenanceModes] = useState<any[]>([])
+    const [maintenanceModes, setMaintenanceModes] = useState<MaintenanceMode[]>([])
 
     const [stats, setStats] = useState<{
         totalTickets: number;

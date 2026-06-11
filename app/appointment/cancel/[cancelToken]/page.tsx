@@ -1,6 +1,7 @@
 'use client'
 
 import { useEffect, useState } from 'react'
+import Link from 'next/link'
 import { useParams } from 'next/navigation'
 import { getAppointmentByToken, cancelAppointmentByToken } from '@/app/actions/appointments'
 
@@ -150,9 +151,9 @@ export default function CancelAppointmentPage() {
           </label>
 
           <div className="flex gap-3 mt-4">
-            <a href="/" className="btn btn-ghost flex-1">
+            <Link href="/" className="btn btn-ghost flex-1">
               Retour
-            </a>
+            </Link>
             <button
               onClick={handleCancel}
               disabled={isCancelling}

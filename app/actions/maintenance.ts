@@ -1,7 +1,7 @@
 "use server"
 
 import prisma from '@/lib/prisma'
-import { verifyCompanyOwnership, getCurrentUserEmail } from '@/lib/auth'
+import { getCurrentUserEmail } from '@/lib/auth'
 import { checkRateLimit } from '@/lib/ratelimit'
 import { sendWhatsAppMessage, isWhatsAppEnabled, isWhatsAppConfigured } from '@/lib/whatsapp'
 

@@ -4,8 +4,8 @@ import React, { useEffect, useState } from 'react'
 import Wrapper from '../components/Wrapper'
 import { useUser } from '@clerk/nextjs'
 import { createService, deleteServiceById, getServiceByEmail } from '../actions'
-import { activateMaintenanceMode, deactivateMaintenanceMode, getActiveMaintenanceModes, isUnderMaintenance } from '../actions/maintenance'
-import { Service } from '../generated/prisma'
+import { activateMaintenanceMode, deactivateMaintenanceMode, getActiveMaintenanceModes } from '../actions/maintenance'
+import { MaintenanceMode, Service } from '../generated/prisma'
 import { Clock2, ClockArrowUp, Trash, Pause, Play } from 'lucide-react'
 import EmptyState from '../components/EmptyState'
 import { usePageTour } from '@/lib/usePageTour'
@@ -23,7 +23,7 @@ const page = () => {
     const [loading, setLoading] = useState<boolean>(false)
     const [isInitialLoad, setIsInitialLoad] = useState<boolean>(true)
     const [services, setServices] = useState<Service[]>([])
-    const [maintenanceModes, setMaintenanceModes] = useState<any[]>([])
+    const [maintenanceModes, setMaintenanceModes] = useState<MaintenanceMode[]>([])
     const [togglingMaintenance, setTogglingMaintenance] = useState<string | null>(null)
 
     usePageTour('services', [

@@ -51,7 +51,6 @@ export interface ServiceEstimationStats {
 const EWMA_ALPHA = 0.7                // poids des données récentes
 const RECENT_WINDOW = 50              // nombre de tickets récents pour l'EWMA
 const HISTORICAL_DAYS = 30            // jours d'historique à considérer
-const MIN_SAMPLES_LOW = 1
 const MIN_SAMPLES_MEDIUM = 10
 const MIN_SAMPLES_HIGH = 50
 const PEAK_HOUR_THRESHOLD = 1.3       // 30% au-dessus de la moyenne = heure de pointe

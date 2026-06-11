@@ -34,7 +34,6 @@ export default function EstimationPage() {
 
   useEffect(() => {
     if (isLoaded) fetchData()
-  // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [isLoaded])
 
   const handleSync = async (serviceId: string) => {

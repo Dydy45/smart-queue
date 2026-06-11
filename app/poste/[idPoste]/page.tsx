@@ -1,5 +1,4 @@
 /* eslint-disable react-hooks/exhaustive-deps */
-/* eslint-disable @typescript-eslint/no-unused-vars */
 /* eslint-disable react-hooks/rules-of-hooks */
 "use client"
 import { getPendingTicketsByEmail, getPostNameById } from "@/app/actions"
@@ -10,6 +9,7 @@ import EmptyState from "@/app/components/EmptyState"
 import TicketComponent from "@/app/components/TicketComponent"
 import Wrapper from "@/app/components/Wrapper"
 import { Ticket } from "@/app/type"
+import { MaintenanceMode } from "@/app/generated/prisma"
 import { useUser } from "@clerk/nextjs"
 import Link from "next/link"
 import { CalendarClock } from "lucide-react"
@@ -30,7 +30,7 @@ const page = ({ params }: { params: Promise<{ idPoste: string }> }) => {
     const {user} = useUser()
     const email = user?.primaryEmailAddress?.emailAddress
     const [tickets, setTickets] = useState<Ticket[]>([])
-    const [maintenanceModes, setMaintenanceModes] = useState<any[]>([])
+    const [maintenanceModes, setMaintenanceModes] = useState<MaintenanceMode[]>([])
 
     const [countdown, setCountdown] = useState<number>(5)
 

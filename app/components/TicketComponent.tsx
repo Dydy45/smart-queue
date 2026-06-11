@@ -1,5 +1,5 @@
 import { Loader, AlertTriangle } from 'lucide-react';
-import React, { useEffect, useState } from 'react'
+import React, { useEffect, useMemo, useState } from 'react'
 import { Ticket } from '../type';
 
 interface TicketComponentProps {
@@ -50,32 +50,28 @@ const TicketComponent: React.FC<TicketComponentProps> = ({ ticket, index, totalW
     const totalMinutes = effectiveWaitTime % 60
     const formattedTotalWaitTime = `${totalHours}h ${totalMinutes}min`
 
-    const [waitTimeStatus, setWaitTimeStatus] = useState("success")
-    const [formattedRealWaitTime, setFormattedRealWaitTime] = useState("")
+    const [now, setNow] = useState(() => Date.now())
 
     useEffect(() => {
+        const interval = setInterval(() => setNow(Date.now()), 60_000)
+        return () => clearInterval(interval)
+    }, [])
 
-        if (!ticket || !ticket.createdAt) return
-
-        const currentTime = new Date().getTime()
-        const createdAtTime = new Date(ticket.createdAt).getTime()
-        const waitTimeInMinutes = (currentTime - createdAtTime) / 60000
-
-        const hours = Math.floor(waitTimeInMinutes / 60)
-        const minutes = Math.floor(waitTimeInMinutes % 60)
-        // eslint-disable-next-line react-hooks/set-state-in-effect
-        setFormattedRealWaitTime(`${hours}h ${minutes}min`)
-
-        if (effectiveWaitTime !== 0) {
-            if (waitTimeInMinutes > effectiveWaitTime) {
-                setWaitTimeStatus("error")
-            } else {
-                setWaitTimeStatus("success")
-            }
+    const { formattedRealWaitTime, waitTimeStatus } = useMemo(() => {
+        if (!ticket?.createdAt) {
+            return { formattedRealWaitTime: '', waitTimeStatus: 'success' }
         }
 
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-    }, [ticket, effectiveWaitTime])
+        const waitTimeInMinutes = (now - new Date(ticket.createdAt).getTime()) / 60000
+        const hours = Math.floor(waitTimeInMinutes / 60)
+        const minutes = Math.floor(waitTimeInMinutes % 60)
+        const formatted = `${hours}h ${minutes}min`
+        const status = effectiveWaitTime !== 0 && waitTimeInMinutes > effectiveWaitTime
+            ? 'error'
+            : 'success'
+
+        return { formattedRealWaitTime: formatted, waitTimeStatus: status }
+    }, [ticket, effectiveWaitTime, now])
 
     return (
         <div className='border p-5 border-base-300 rounded-xl flex flex-col space-y-2'>

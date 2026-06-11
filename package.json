@@ -5,6 +5,7 @@
   "scripts": {
     "dev": "next dev",
     "socket-server": "tsx server.js",
+    "postinstall": "prisma generate",
     "build": "prisma generate && next build",
     "start": "next start",
     "lint": "eslint",

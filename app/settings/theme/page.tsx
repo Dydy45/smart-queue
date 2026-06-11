@@ -1,7 +1,7 @@
 'use client'
 
 import { useEffect, useState } from 'react'
-import { Palette, Save, Loader2, Eye, Image } from 'lucide-react'
+import { Palette, Save, Loader2, Eye, Image as ImageIcon } from 'lucide-react'
 import Wrapper from '@/app/components/Wrapper'
 import { getMyCompanyTheme, updateCompanyTheme } from '@/app/actions/theme'
 
@@ -104,7 +104,7 @@ export default function ThemeSettingsPage() {
               <label className="form-control">
                 <div className="label">
                   <span className="label-text flex items-center gap-1">
-                    <Image className="w-4 h-4" /> URL du logo
+                    <ImageIcon className="w-4 h-4" aria-hidden="true" /> URL du logo
                   </span>
                 </div>
                 <input
