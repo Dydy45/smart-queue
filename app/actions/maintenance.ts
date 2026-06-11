@@ -13,11 +13,11 @@ export async function activateMaintenanceMode(
   targetId: string,
   targetType: 'service' | 'post',
   reason?: string
-) {
+): Promise<{ success: boolean; error?: string; maintenanceId?: string }> {
   try {
     const email = await getCurrentUserEmail()
     if (!email) {
-      throw new Error('Non authentifié')
+      return { success: false, error: 'Non authentifié' }
     }
 
     // Vérifier que l'utilisateur est OWNER ou ADMIN
@@ -25,7 +25,7 @@ export async function activateMaintenanceMode(
       where: { email }
     })
     if (!company) {
-      throw new Error('Accès réservé aux OWNER et ADMIN')
+      return { success: false, error: 'Accès réservé aux OWNER et ADMIN' }
     }
 
     // Rate limiting
@@ -38,7 +38,7 @@ export async function activateMaintenanceMode(
         where: { id: targetId, companyId: company.id }
       })
       if (!service) {
-        throw new Error('Service non trouvé ou accès non autorisé')
+        return { success: false, error: 'Service non trouvé ou accès non autorisé' }
       }
       companyId = service.companyId
 
@@ -47,7 +47,7 @@ export async function activateMaintenanceMode(
         where: { serviceId: targetId, isActive: true }
       })
       if (existing) {
-        throw new Error('Ce service est déjà en maintenance')
+        return { success: false, error: 'Ce service est déjà en maintenance' }
       }
     } else {
       const post = await prisma.post.findFirst({
@@ -55,7 +55,7 @@ export async function activateMaintenanceMode(
         include: { service: true }
       })
       if (!post) {
-        throw new Error('Poste non trouvé ou accès non autorisé')
+        return { success: false, error: 'Poste non trouvé ou accès non autorisé' }
       }
       companyId = post.companyId
 
@@ -64,7 +64,7 @@ export async function activateMaintenanceMode(
         where: { postId: targetId, isActive: true }
       })
       if (existing) {
-        throw new Error('Ce poste est déjà en maintenance')
+        return { success: false, error: 'Ce poste est déjà en maintenance' }
       }
     }
 
@@ -90,18 +90,18 @@ export async function activateMaintenanceMode(
     return { success: true, maintenanceId: maintenanceMode.id }
   } catch (error) {
     console.error('[Maintenance] Erreur activation:', error)
-    throw error
+    return { success: false, error: 'Erreur lors de l\'activation de la maintenance' }
   }
 }
 
 /**
  * Désactive le mode maintenance pour un service ou un poste.
  */
-export async function deactivateMaintenanceMode(maintenanceId: string) {
+export async function deactivateMaintenanceMode(maintenanceId: string): Promise<{ success: boolean; error?: string }> {
   try {
     const email = await getCurrentUserEmail()
     if (!email) {
-      throw new Error('Non authentifié')
+      return { success: false, error: 'Non authentifié' }
     }
 
     // Vérifier que l'utilisateur est OWNER ou ADMIN
@@ -109,7 +109,7 @@ export async function deactivateMaintenanceMode(maintenanceId: string) {
       where: { email }
     })
     if (!company) {
-      throw new Error('Accès réservé aux OWNER et ADMIN')
+      return { success: false, error: 'Accès réservé aux OWNER et ADMIN' }
     }
 
     // Rate limiting
@@ -122,12 +122,12 @@ export async function deactivateMaintenanceMode(maintenanceId: string) {
     })
 
     if (!maintenanceMode) {
-      throw new Error('Mode maintenance non trouvé')
+      return { success: false, error: 'Mode maintenance non trouvé' }
     }
 
     // Vérifier que l'utilisateur appartient à la bonne entreprise
     if (maintenanceMode.companyId !== company.id) {
-      throw new Error('Accès non autorisé')
+      return { success: false, error: 'Accès non autorisé' }
     }
 
     // Désactiver (soft delete)
@@ -141,15 +141,25 @@ export async function deactivateMaintenanceMode(maintenanceId: string) {
     return { success: true }
   } catch (error) {
     console.error('[Maintenance] Erreur désactivation:', error)
-    throw error
+    return { success: false, error: 'Erreur lors de la désactivation de la maintenance' }
   }
 }
 
 /**
  * Récupère les modes maintenance actifs pour une entreprise.
  */
-export async function getActiveMaintenanceModes(companyId: string) {
+export async function getActiveMaintenanceModes(companyIdOrEmail: string) {
   try {
+    let companyId = companyIdOrEmail
+    if (companyIdOrEmail.includes('@')) {
+      const company = await prisma.company.findUnique({
+        where: { email: companyIdOrEmail },
+        select: { id: true }
+      })
+      if (!company) return []
+      companyId = company.id
+    }
+
     const maintenanceModes = await prisma.maintenanceMode.findMany({
       where: {
         companyId,
