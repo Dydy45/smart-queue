@@ -1,6 +1,7 @@
 "use server"
 
 import prisma from '@/lib/prisma'
+import { Prisma } from '@/app/generated/prisma'
 import { getCurrentUserEmail } from '@/lib/auth'
 import { checkRateLimit } from '@/lib/ratelimit'
 import { sendWhatsAppMessage, isWhatsAppEnabled, isWhatsAppConfigured } from '@/lib/whatsapp'
@@ -68,9 +69,17 @@ export async function activateMaintenanceMode(
       }
     }
 
-    // Créer le mode maintenance
-    const maintenanceMode = await prisma.maintenanceMode.create({
-      data: {
+    // Créer ou réactiver le mode maintenance (serviceId/postId sont uniques :
+    // une ligne désactivée peut déjà exister pour cette cible)
+    const maintenanceMode = await prisma.maintenanceMode.upsert({
+      where: targetType === 'service' ? { serviceId: targetId } : { postId: targetId },
+      update: {
+        isActive: true,
+        reason: reason || 'Indisponibilité temporaire',
+        activatedBy: email,
+        activatedAt: new Date()
+      },
+      create: {
         companyId,
         serviceId: targetType === 'service' ? targetId : null,
         postId: targetType === 'post' ? targetId : null,
@@ -90,7 +99,8 @@ export async function activateMaintenanceMode(
     return { success: true, maintenanceId: maintenanceMode.id }
   } catch (error) {
     console.error('[Maintenance] Erreur activation:', error)
-    return { success: false, error: 'Erreur lors de l\'activation de la maintenance' }
+    const detail = error instanceof Prisma.PrismaClientKnownRequestError ? ` (code ${error.code})` : ''
+    return { success: false, error: `Erreur lors de l'activation de la maintenance${detail}` }
   }
 }
 
