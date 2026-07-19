@@ -35,7 +35,7 @@ const navGroups: NavGroup[] = [
     label: 'Principal',
     links: [
       { href: '/home', label: 'Accueil', icon: <Home className="w-5 h-5" />, roles: ['OWNER', 'ADMIN', 'STAFF'] },
-      { href: '/services', label: 'Services', icon: <Layers className="w-5 h-5" />, roles: ['OWNER', 'ADMIN'], id: 'tour-sidebar-services' },
+      { href: '/services', label: 'Opérations', icon: <Layers className="w-5 h-5" />, roles: ['OWNER', 'ADMIN'], id: 'tour-sidebar-services' },
       { href: '/poste_list', label: 'Postes', icon: <Monitor className="w-5 h-5" />, roles: ['OWNER', 'ADMIN'], id: 'tour-sidebar-postes' },
     ],
   },
