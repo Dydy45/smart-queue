@@ -31,7 +31,7 @@ const page = () => {
         element: '#tour-service-form',
         popover: {
           title: 'Créez votre première opération',
-          description: 'Renseignez le <strong>nom de l'opération</strong> et le <strong>temps moyen de traitement</strong> en minutes, puis cliquez sur <em>Ajouter l'opération</em>.<br><br>Exemples : Consultation 15 min, Caisse 5 min.',
+          description: 'Renseignez le <strong>nom de l&apos;opération</strong> et le <strong>temps moyen de traitement</strong> en minutes, puis cliquez sur <em>Ajouter l&apos;opération</em>.<br><br>Exemples : Consultation 15 min, Caisse 5 min.',
           side: 'right',
           align: 'start',
         },
