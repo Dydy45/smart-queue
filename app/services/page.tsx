@@ -30,8 +30,8 @@ const page = () => {
       {
         element: '#tour-service-form',
         popover: {
-          title: 'Créez votre premier service',
-          description: 'Renseignez le <strong>nom du service</strong> et le <strong>temps moyen de traitement</strong> en minutes, puis cliquez sur <em>Ajouter le service</em>.<br><br>Exemples : Consultation 15 min, Caisse 5 min.',
+          title: 'Créez votre première opération',
+          description: 'Renseignez le <strong>nom de l'opération</strong> et le <strong>temps moyen de traitement</strong> en minutes, puis cliquez sur <em>Ajouter l'opération</em>.<br><br>Exemples : Consultation 15 min, Caisse 5 min.',
           side: 'right',
           align: 'start',
         },
@@ -144,9 +144,9 @@ const page = () => {
 
         <div id="tour-service-form" className='space-y-2 md:w-1/4 w-full'>
 
-            <span className='label-text'>Nom Du Service</span>
+            <span className='label-text'>Nom De L'opération</span>
             <div>
-                <input type="text" name="" placeholder='Nom du service' className='input input-bordered input-sm w-full' value={serviceName} onChange={(e) => setServiceName(e.target.value)} aria-label="Nom du service" />
+                <input type="text" name="" placeholder="Nom de l'opération" className='input input-bordered input-sm w-full' value={serviceName} onChange={(e) => setServiceName(e.target.value)} aria-label="Nom de l'opération" />
             </div>
 
             <span className='label-text'>Temps Moyen (en minutes)</span>
@@ -164,12 +164,12 @@ const page = () => {
             <button className='btn btn-primary btn-sm mt-4' onClick={handleCreateService} disabled={loading}>
               {loading ? (
                 <><span className='loading loading-spinner loading-sm' role="status" aria-label="Chargement"></span>Ajout...</>
-              ) : 'Ajouter le service'}
+              ) : "Ajouter l'opération"}
             </button>
         </div>
 
         <div className='mt-4 md:mt-0 md:ml-4 md:w-3/4 md:border-l border-base-200 md:pl-4 w-full'>
-          <h3 className='font-semibold'>Liste des services</h3>
+          <h3 className='font-semibold'>Liste des opérations</h3>
 
           {isInitialLoad ? (
             <div className="overflow-x-auto">
@@ -181,7 +181,7 @@ const page = () => {
             </div>
           ) : services.length === 0 ?  (
             <div>
-              <EmptyState IconComponent={'Telescope'} message={'Aucun service pour le moment'} />
+              <EmptyState IconComponent={'Telescope'} message={'Aucune opération pour le moment'} />
             </div>
           ) : (
             <div>
@@ -190,7 +190,7 @@ const page = () => {
                   <thead>
                     <tr>
                       <th>#</th>
-                      <th>Nom du Service</th>
+                      <th>Nom de l'opération</th>
                       <th>Temps Moyen (min)</th>
                       <th>Actions</th>
                     </tr>
