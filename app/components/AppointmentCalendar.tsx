@@ -180,10 +180,9 @@ export default function AppointmentCalendar({ services, pageName }: AppointmentC
     return (
       <div className="card bg-base-200 max-w-lg mx-auto">
         <div className="card-body text-center">
-          <span className="text-5xl mb-2">✅</span>
           <h2 className="text-xl font-bold">Rendez-vous réservé !</h2>
           <div className="text-left mt-4 space-y-2 text-sm">
-            <p><strong>Service :</strong> {services.find(s => s.id === selectedService)?.name}</p>
+            <p><strong>Opération :</strong> {services.find(s => s.id === selectedService)?.name}</p>
             <p><strong>Date :</strong> {selectedDate && formatDate(selectedDate)}</p>
             <p><strong>Heure :</strong> {selectedSlot}</p>
             <p><strong>Durée :</strong> {slotDuration} min</p>
