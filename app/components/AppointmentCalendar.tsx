@@ -212,7 +212,7 @@ export default function AppointmentCalendar({ services, pageName }: AppointmentC
     <div className="max-w-2xl mx-auto">
       {/* Steps indicator */}
       <ul className="steps steps-horizontal w-full mb-8">
-        <li className={`step ${step >= 1 ? 'step-primary' : ''}`}>Service</li>
+        <li className={`step ${step >= 1 ? 'step-primary' : ''}`}>Opération</li>
         <li className={`step ${step >= 2 ? 'step-primary' : ''}`}>Date & Heure</li>
         <li className={`step ${step >= 3 ? 'step-primary' : ''}`}>Vos infos</li>
       </ul>
@@ -228,7 +228,7 @@ export default function AppointmentCalendar({ services, pageName }: AppointmentC
       {step === 1 && (
         <div className="card bg-base-200">
           <div className="card-body">
-            <h2 className="card-title">Choisissez un service</h2>
+            <h2 className="card-title">Choisissez une opération</h2>
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 mt-4">
               {services.map(service => (
                 <button
@@ -400,7 +400,7 @@ export default function AppointmentCalendar({ services, pageName }: AppointmentC
 
             {/* Récap RDV */}
             <div className="bg-base-100 rounded-lg p-3 mb-4 text-sm">
-              <p><strong>Service :</strong> {services.find(s => s.id === selectedService)?.name}</p>
+              <p><strong>Opération :</strong> {services.find(s => s.id === selectedService)?.name}</p>
               <p><strong>Date :</strong> {selectedDate && formatDate(selectedDate)} à {selectedSlot}</p>
               <p><strong>Durée :</strong> ~{slotDuration} min</p>
             </div>
@@ -488,7 +488,7 @@ export default function AppointmentCalendar({ services, pageName }: AppointmentC
                     Réservation en cours...
                   </>
                 ) : (
-                  '📅 Confirmer le rendez-vous'
+                  'Confirmer le rendez-vous'
                 )}
               </button>
             </div>
