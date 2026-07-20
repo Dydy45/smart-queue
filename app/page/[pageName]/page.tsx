@@ -231,7 +231,7 @@ const page = ({ params }: { params: Promise<{ pageName: string }> }) => {
         <div className="alert alert-warning mb-4">
           <AlertTriangle className="w-5 h-5" />
           <div>
-            <h3 className="font-bold">Service temporairement indisponible</h3>
+            <h3 className="font-bold">Opération temporairement indisponible</h3>
             <p className="text-sm">
               {services.filter(s => servicesInMaintenance.has(s.id)).map(s => s.name).join(', ')} - Traitement suspendu
             </p>
@@ -247,10 +247,10 @@ const page = ({ params }: { params: Promise<{ pageName: string }> }) => {
             onChange={(e) => setSelectedServiceId(e.target.value)}
             value={selectedServiceId || ''}
             disabled={isLoading || isLoadingServices}
-            aria-label="Choisir un service"
+            aria-label="Choisir une opération"
           >
             <option disabled value="">
-              {isLoadingServices ? '⏳ Chargement des services...' : 'Choisissez un service'}
+              {isLoadingServices ? '⏳ Chargement des opérations...' : 'Choisissez une opération'}
             </option>
             {services.map((service) => (
               <option 
