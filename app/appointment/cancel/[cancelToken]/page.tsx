@@ -162,7 +162,7 @@ export default function CancelAppointmentPage() {
               {isCancelling ? (
                 <span className="loading loading-spinner loading-sm" />
               ) : (
-                '🚫 Annuler le RDV'
+                'Annuler le RDV'
               )}
             </button>
           </div>
