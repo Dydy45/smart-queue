@@ -28,7 +28,7 @@ export default async function AppointmentPage({ params }: { params: Promise<{ pa
       <div className="max-w-2xl mx-auto mb-8 text-center">
         <h1 className="text-3xl font-bold">Prendre rendez-vous</h1>
         <p className="text-base-content/60 mt-2">
-          Choisissez un service, une date et un créneau horaire
+          Choisissez une opération, une date et un créneau horaire
         </p>
       </div>
       <AppointmentCalendar services={serviceOptions} pageName={pageName} />
